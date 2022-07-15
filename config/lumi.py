@@ -122,6 +122,39 @@ site_configuration = {
                     ],
                     'launcher': 'srun'
                     },
+                    {
+                    'name': 'gpu',
+                    'descr': 'Multicore nodes (AMD EPYC 7662, 256|512|1024GB/cn), GPU (AMD Instinct MI250 8/cn)',
+                    'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Singularity',
+                            'modules': []
+                        }
+                    ],
+                    'environs': [
+                        'builtin',
+                        'builtin-hip',
+                        'PrgEnv-aocc',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                    ],
+                    'max_jobs': 10,
+                    'modules': ['LUMI/21.12', 'partition/G'],
+                    'access': ['--partition gpu',
+                               f'--account={project}'],
+                    'resources': [
+                        {
+                            'name': 'memory',
+                            'options': ['--mem={mem_per_node}']
+                        },
+                        {
+                            'name': '_rfm_gpu',
+                            'options': ['--gpus_per_node={num_gpus_per_node}']
+                        },
+                    ],
+                    'launcher': 'srun'
+                    },
             ]
         },
         {
