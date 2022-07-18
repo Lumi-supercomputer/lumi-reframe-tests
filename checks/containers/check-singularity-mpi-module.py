@@ -7,7 +7,7 @@ import reframe.utility.sanity as sn
 class SingularityCrayMPICHBindingsTest(rfm.RunOnlyRegressionTest):
     descr = 'Test the singularity-bindings module with glibc'
     platform = parameter(['Singularity'])
-    valid_systems = ['lumi:gpu']
+    valid_systems = ['lumi:gpu', 'lumi:standard']
     valid_prog_environs = ['builtin']
     num_tasks = 2
     num_tasks_per_node = 1
