@@ -246,7 +246,6 @@ site_configuration = {
         {
             'name': 'maintenance',
             'options': [
-                '--unload-module=reframe',
                 '--exec-policy=async',
                 '--strict',
                 '--output=/project/%s/$USER/regression/maintenance' % project,
@@ -254,6 +253,7 @@ site_configuration = {
                 '--stage=/scratch/%s/regression/maintenance/stage' % project,
                 '--report-file=/project/%s/$USER/regression/maintenance/reports/maint_report_{sessionid}.json' % project,
                 '-Jreservation=maintenance',
+                '-Jnodelist=nodelist',
                 '--save-log-files',
                 '--tag=maintenance',
                 '--timestamp=%F_%H-%M-%S'
