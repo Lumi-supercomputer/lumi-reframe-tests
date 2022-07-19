@@ -31,6 +31,7 @@ site_configuration = {
                     'name': 'small',
                     'descr': 'Multicore nodes (AMD EPYC 7763, 256|512|1024GB/cn)',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Singularity',
@@ -62,6 +63,7 @@ site_configuration = {
                     'name': 'standard',
                     'descr': 'Multicore nodes (AMD EPYC 7763, 256GB/cn)',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Singularity',
@@ -93,6 +95,7 @@ site_configuration = {
                     'name': 'eap',
                     'descr': 'Multicore nodes (AMD EPYC 7662, 256|512|1024GB/cn), GPU (AMD Instinct MI100 4/cn)',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Singularity',
@@ -126,6 +129,7 @@ site_configuration = {
                     'name': 'gpu',
                     'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250 8/cn)',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Singularity',
@@ -164,6 +168,7 @@ site_configuration = {
                 {
                     'name': 'default',
                     'scheduler': 'local',
+                    'time_limit': '10m',
                     'environs': ['builtin'],
                     'descr': 'Login nodes',
                     'launcher': 'local'
