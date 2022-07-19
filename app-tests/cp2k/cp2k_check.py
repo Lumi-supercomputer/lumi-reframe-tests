@@ -6,15 +6,13 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
     executable = 'cp2k.psmp'
     maintainers = ['mszpindler']
     strict_check = False
-    pe_release = '21.08'
-    cp2k_version = '9.1'
-    modules = ['CP2K-{cp2k_version}']
+    modules = ['CP2K']
 
     @run_after('init')
     def set_input(self):
-        self.prerun_cmds = [
-                f'curl -LJO https://raw.githubusercontent.com/cp2k/cp2k/master/benchmarks/QS/H2O-256.inp'
-            ]
+        #self.prerun_cmds = [
+        #        f'curl -LJO https://raw.githubusercontent.com/cp2k/cp2k/master/benchmarks/QS/H2O-256.inp'
+        #    ]
         self.executable_opts = ['H2O-256.inp']
 
     @run_after('init')
@@ -50,10 +48,10 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class lumi_cp2k_cpu_check(cp2k_check):
     scale = parameter(['small'])
-    valid_systems = ['lumi:cpu', 'lumi:gpu']
+    valid_systems = ['lumi:standard', 'lumi:gpu']
     refs_by_scale = {
         'small': {
-            'lumi:cpu': {'time': (152.644, None, 0.05, 's')},
+            'lumi:standard': {'time': (152.644, None, 0.05, 's')},
         },
         'large': {
             #
