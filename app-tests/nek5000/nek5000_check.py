@@ -5,8 +5,8 @@ import reframe.utility.sanity as sn
 class nek5000_check(rfm.RegressionTest):
     #modules = ['']
     #user_modules =
-    valid_systems = ['ares:cpu']
-    valid_prog_environs = ['foss']
+    valid_systems = ['lumi']
+    valid_prog_environs = ['cpeGNU']
     executable = './nek5000'
     strict_check = False
     descr = (f'Nek500 test')
@@ -21,7 +21,7 @@ class nek5000_check(rfm.RegressionTest):
     @run_before('compile')
     def build_test(self):
         self.build_system.commands = [
-            f'export PATH=/net/people/plgrid/plgmszpindl/Nek5000/bin:$PATH',
+            f'export PATH=/net/people/plgrid/plgmszpindl/Nek5000/bin:$PATH', # Replace by application module
             'makenek bp5',
         ]
         self.prebuild_cmds = [
