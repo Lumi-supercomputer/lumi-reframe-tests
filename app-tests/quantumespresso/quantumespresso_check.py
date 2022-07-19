@@ -4,19 +4,18 @@ import reframe.utility.sanity as sn
 
 class quantumespresso_check(rfm.RunOnlyRegressionTest):
     scale = parameter(['small', 'large'])
-    pe_release = '21.12'
-    qe_version = '7.0`'
-    modules = ['QuantumESPRESSO-{qe_version}']
+    modules = ['QuantumESPRESSO']
     executable = 'pw.x'
     strict_check = False
     maintainers = ['mszpindler']
 
     @run_after('init')
     def prepare_test(self):
-        self.prerun_cmds = [
-            f'curl -LJO https://raw.githubusercontent.com/QEF/benchmarks/master/AUSURF112/ausurf.in',
-            f'curl -LJO https://raw.githubusercontent.com/QEF/benchmarks/master/AUSURF112/Au.pbe-nd-van.UPF'
-        ]
+        # store in src unless compute nodes do not have outbound internet connection
+	#self.prerun_cmds = [
+        #    f'curl -LJO https://raw.githubusercontent.com/QEF/benchmarks/master/AUSURF112/ausurf.in',
+        #    f'curl -LJO https://raw.githubusercontent.com/QEF/benchmarks/master/AUSURF112/Au.pbe-nd-van.UPF'
+        #]
         self.executable_opts += ['-in', 'ausurf.in', '-pd', '.true.']
 
     @run_after('init')
@@ -46,12 +45,15 @@ class quantumespresso_check(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class lumi_quantumespresso_cpu_check(quantumespresso_check):
     energy_tolerance = 1.0e-6
+    valid_systems = ['lumi:standard']
 
     @run_after('init')
     def setup_test(self):
         self.descr = (f'QuantumESPRESSO CPU check (version: {self.scale})')
+        self.tags |= {'maintenance', 'production'}
+
         if self.scale == 'small':
-            self.valid_systems = ['lumi:cpu']
+            self.valid_systems = ['lumi:standard']
             self.energy_reference = -11427.09017218
             if self.current_system.name in ['lumi']:
                 self.num_tasks = 256
@@ -89,7 +91,7 @@ class lumi_quantumespresso_cpu_check(quantumespresso_check):
 
 
 @rfm.simple_test
-class lumi_quantumespresso_cpu_check(quantumespresso_check):
+class lumi_quantumespresso_gpu_check(quantumespresso_check):
     # Fix it: GPU enabled CP2K instance (module)
     valid_systems = ['lumi:gpu']
     num_gpus_per_node = 1
