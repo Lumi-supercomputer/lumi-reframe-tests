@@ -4,7 +4,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class SingularityCrayMPICHBindingsTest(rfm.RunOnlyRegressionTest):
+class singularity_cray_mpich_bindings_test(rfm.RunOnlyRegressionTest):
     descr = 'Test the singularity-bindings module with glibc'
     valid_systems = ['lumi:gpu', 'lumi:standard']
     valid_prog_environs = ['builtin']
@@ -27,7 +27,7 @@ class SingularityCrayMPICHBindingsTest(rfm.RunOnlyRegressionTest):
         self.container_platform.command = '/home/osu/p2p_osu_bw'
 
     @sanity_function
-    def assert_release(self):
+    def assert_found_max_bandwidth(self):
         max_bandwidth = r'4194304'
         return sn.assert_found(max_bandwidth, self.stdout)
 
