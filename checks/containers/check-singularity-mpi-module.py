@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class SingularityCrayMPICHBindingsTest(rfm.RunOnlyRegressionTest):
     descr = 'Test the singularity-bindings module with glibc'
-    platform = parameter(['Singularity'])
     valid_systems = ['lumi:gpu', 'lumi:standard']
     valid_prog_environs = ['builtin']
     num_tasks = 2
@@ -23,8 +22,8 @@ class SingularityCrayMPICHBindingsTest(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def set_container_variables(self):
-        self.descr = f'Run commands inside a container using {self.platform}'
-        self.container_platform = self.platform
+        self.descr = f'Run commands inside a container using Singularity'
+        self.container_platform = 'Singularity'
         self.container_platform.image = 'osu-debian-jessie.sif'
         self.container_platform.command = '/home/osu/p2p_osu_bw'
 
