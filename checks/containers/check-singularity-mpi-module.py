@@ -22,7 +22,6 @@ class SingularityCrayMPICHBindingsTest(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def set_container_variables(self):
-        self.descr = f'Run commands inside a container using Singularity'
         self.container_platform = 'Singularity'
         self.container_platform.image = 'osu-debian-jessie.sif'
         self.container_platform.command = '/home/osu/p2p_osu_bw'
