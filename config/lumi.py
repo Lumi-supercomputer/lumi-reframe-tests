@@ -49,7 +49,7 @@ site_configuration = {
                     'max_jobs': 100,
                     'modules': ['LUMI', 'partition/C'],
                     'access': ['--partition small',
-                               '--account=%s' % project],
+                               f'--account={project}'],
                     'resources': [
                         {
                             'name': 'memory',
@@ -80,7 +80,7 @@ site_configuration = {
                     'max_jobs': 100,
                     'modules': ['LUMI', 'partition/C'],
                     'access': ['--partition standard',
-                               '--account=%s' % project],
+                               f'--account={project}'],
                     'resources': [
                         {
                             'name': 'memory',
@@ -109,7 +109,7 @@ site_configuration = {
                     'max_jobs': 10,
                     'modules': ['LUMI/21.12', 'partition/EAP', 'rocm'],
                     'access': ['--partition eap',
-                               '--account=%s' % project],
+                               f'--account={project}'],
                     'resources': [
                         {
                             'name': 'memory',
@@ -118,6 +118,39 @@ site_configuration = {
                         {
                             'name': '_rfm_gpu',
                             'options': ['--gres=gpu:mi100:{num_gpus_per_node}']
+                        },
+                    ],
+                    'launcher': 'srun'
+                    },
+                    {
+                    'name': 'gpu',
+                    'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250 8/cn)',
+                    'scheduler': 'slurm',
+                    'container_platforms': [
+                        {
+                            'type': 'Singularity',
+                            'modules': []
+                        }
+                    ],
+                    'environs': [
+                        'builtin',
+                        'builtin-hip',
+                        'PrgEnv-aocc',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                    ],
+                    'max_jobs': 10,
+                    'modules': ['LUMI/21.12', 'partition/G'],
+                    'access': ['--partition gpu',
+                               f'--account={project}'],
+                    'resources': [
+                        {
+                            'name': 'memory',
+                            'options': ['--mem={mem_per_node}']
+                        },
+                        {
+                            'name': '_rfm_gpu',
+                            'options': ['--gpus-per-node={num_gpus_per_node}']
                         },
                     ],
                     'launcher': 'srun'
