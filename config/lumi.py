@@ -49,7 +49,7 @@ site_configuration = {
                     'max_jobs': 100,
                     'modules': ['LUMI', 'partition/C'],
                     'access': ['--partition small',
-                               '--account=%s' % project],
+                               f'--account={project}'],
                     'resources': [
                         {
                             'name': 'memory',
@@ -80,7 +80,7 @@ site_configuration = {
                     'max_jobs': 100,
                     'modules': ['LUMI', 'partition/C'],
                     'access': ['--partition standard',
-                               '--account=%s' % project],
+                               f'--account={project}'],
                     'resources': [
                         {
                             'name': 'memory',
@@ -109,7 +109,7 @@ site_configuration = {
                     'max_jobs': 10,
                     'modules': ['LUMI/21.12', 'partition/EAP', 'rocm'],
                     'access': ['--partition eap',
-                               '--account=%s' % project],
+                               f'--account={project}'],
                     'resources': [
                         {
                             'name': 'memory',
@@ -124,7 +124,7 @@ site_configuration = {
                     },
                     {
                     'name': 'gpu',
-                    'descr': 'Multicore nodes (AMD EPYC 7662, 256|512|1024GB/cn), GPU (AMD Instinct MI250 8/cn)',
+                    'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250 8/cn)',
                     'scheduler': 'slurm',
                     'container_platforms': [
                         {
