@@ -18,7 +18,9 @@ class pytorch_distr_cnn(rfm.RunOnlyRegressionTest):
     num_tasks = 4
     num_tasks_per_node = 1
     num_gpus_per_node = 8
-    variables['NCCL_DEBUG'] = 'INFO'
+    variables = {
+        'NCCL_DEBUG': 'INFO'
+    }
     throughput_per_gpu = 567.65
     throughput_total = throughput_per_gpu * num_tasks * num_gpus_per_node
     reference = {
