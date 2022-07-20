@@ -10,7 +10,8 @@ class deepspeed_bert_qa_train(rfm.RunOnlyRegressionTest):
     # this test:
     # MPICC=mpicc pip install --user mpi4py
     # pip install --user datasets transformers
-    descr = 'Test the singularity-bindings module with glibc'
+    descr = ('Check the training throughput of a BERT with Squad for the QA '
+             'task with DeepSpeed')
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
     sourcesdir = 'src'
@@ -36,7 +37,6 @@ class deepspeed_bert_qa_train(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def set_container_variables(self):
-        self.descr = f'Run commands inside a container using Singularity'
         self.container_platform = 'Singularity'
         self.container_platform.image = os.path.join(
             self.current_system.resourcesdir,
