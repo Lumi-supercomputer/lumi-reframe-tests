@@ -31,6 +31,7 @@ site_configuration = {
                     'name': 'small',
                     'descr': 'Multicore nodes (AMD EPYC 7763, 256|512|1024GB/cn)',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Singularity',
@@ -62,6 +63,7 @@ site_configuration = {
                     'name': 'standard',
                     'descr': 'Multicore nodes (AMD EPYC 7763, 256GB/cn)',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Singularity',
@@ -93,6 +95,7 @@ site_configuration = {
                     'name': 'eap',
                     'descr': 'Multicore nodes (AMD EPYC 7662, 256|512|1024GB/cn), GPU (AMD Instinct MI100 4/cn)',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Singularity',
@@ -126,6 +129,7 @@ site_configuration = {
                     'name': 'gpu',
                     'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250 8/cn)',
                     'scheduler': 'slurm',
+                    'time_limit': '10m',
                     'container_platforms': [
                         {
                             'type': 'Singularity',
@@ -279,7 +283,6 @@ site_configuration = {
         {
             'name': 'maintenance',
             'options': [
-                '--unload-module=reframe',
                 '--exec-policy=async',
                 '--strict',
                 '--output=/project/%s/$USER/regression/maintenance' % project,
@@ -287,6 +290,7 @@ site_configuration = {
                 '--stage=/scratch/%s/regression/maintenance/stage' % project,
                 '--report-file=/project/%s/$USER/regression/maintenance/reports/maint_report_{sessionid}.json' % project,
                 '-Jreservation=maintenance',
+                '-Jnodelist=nodelist',
                 '--save-log-files',
                 '--tag=maintenance',
                 '--timestamp=%F_%H-%M-%S'
