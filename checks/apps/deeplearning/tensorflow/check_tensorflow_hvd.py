@@ -16,19 +16,22 @@ class tensorflow_hvd_cnn(rfm.RunOnlyRegressionTest):
     num_tasks = 32
     num_gpus_per_node = 8
     num_tasks_per_node = num_gpus_per_node
+    throughput_per_gpu = 506.55
     variables = {
         'NCCL_DEBUG': 'INFO',
     }
-    throughput_per_gpu = 506.55
-    throughput_total = throughput_per_gpu * num_tasks
-    reference = {
-        'lumi:gpu': {
-            'samples_per_sec_per_gpu': (throughput_per_gpu,
-                                        -0.1, None, 'samples/sec'),
-            'samples_per_sec_total': (throughput_total,
-                                      -0.1, None, 'samples/sec')
+
+    @run_after('init')
+    def set_references(self):
+        throughput_total = self.throughput_per_gpu * self.num_tasks
+        self.reference = {
+            'lumi:gpu': {
+                'samples_per_sec_per_gpu': (self.throughput_per_gpu,
+                                            -0.1, None, 'samples/sec'),
+                'samples_per_sec_total': (throughput_total,
+                                          -0.1, None, 'samples/sec')
+            }
         }
-    }
 
     @run_before('run')
     def set_container_variables(self):
@@ -57,14 +60,28 @@ class tensorflow_hvd_cnn(rfm.RunOnlyRegressionTest):
 
     @performance_function('samples/sec')
     def samples_per_sec_per_gpu(self):
-        return sn.avg(sn.extractall(
-            r'Iter #\d+: (?P<samples_per_sec_per_gpu>\S+) img',
+        return sn.extractsingle(
+            r'Img/sec per GPU: (?P<samples_per_sec_per_gpu>\S+) \+',
             self.stdout, 'samples_per_sec_per_gpu', float
-        ))
+        )
 
     @performance_function('samples/sec')
     def samples_per_sec_total(self):
-        return sn.avg(sn.extractall(
+        return sn.extractsingle(
             r'img/sec on \d+ GPU\(s\): (?P<samples_per_sec_total>\S+) \+',
             self.stdout, 'samples_per_sec_total', float
-        ))
+        )
+
+
+@rfm.simple_test
+class tensorflow_keras_hvd_cnn(tensorflow_hvd_cnn):
+    throughput_per_gpu = 441.4
+
+    @run_before('run')
+    def set_container_variables(self):
+        super().set_container_variables()
+        self.container_platform.command = (
+            "bash -c '"
+            "cd /rfm_workdir; "
+            "python tf2_keras_hvd_synthetic_benchmark.py --batch-size=256'"
+        )
