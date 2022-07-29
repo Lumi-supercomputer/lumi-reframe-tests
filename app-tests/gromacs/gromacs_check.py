@@ -7,14 +7,12 @@ class lumi_gromacs_check(gromacs_check):
     maintainers = ['mszpindler']
     use_multithreading = False
     executable_opts += ['-dlb yes', '-ntomp 1', '-npme -1']
-    pe_release = '21.12'
-    gromacs_version = '2021.5'
     valid_prog_environs = ['cpeGNU']
 
     num_nodes = parameter([1, 2, 4], loggable=True)
     allref = {
         1: {
-            'gfx908a': { # Copied from CSCS check for sm_60
+            'gfx90a': { # Copied from CSCS check for sm_60
                 'HECBioSim/Crambin': (195.0, None, None, 'ns/day'),
                 'HECBioSim/Glutamine-Binding-Protein': (78.0, None, None, 'ns/day'),   
                 'HECBioSim/hEGFRDimer': (8.5, None, None, 'ns/day'),
@@ -30,7 +28,7 @@ class lumi_gromacs_check(gromacs_check):
             },
         },
         2: {
-            'gfx908a': { # Copied from CSCS check for sm_60
+            'gfx90a': { # Copied from CSCS check for sm_60
                 'HECBioSim/Crambin': (202.0, None, None, 'ns/day'),
                 'HECBioSim/Glutamine-Binding-Protein': (111.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimer': (15.0, None, None, 'ns/day'),
@@ -46,7 +44,7 @@ class lumi_gromacs_check(gromacs_check):
             },
         },
         4: {
-            'gfx908a': { # Copied from CSCS check for sm_60
+            'gfx90a': { # Copied from CSCS check for sm_60
                 'HECBioSim/Crambin': (200.0, None, None, 'ns/day'),
                 'HECBioSim/Glutamine-Binding-Protein': (133.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimer': (22.0, None, None, 'ns/day'),
@@ -66,10 +64,19 @@ class lumi_gromacs_check(gromacs_check):
     }
 
     @run_after('init')
+    def overwrite_cmds(self):
+    # Need to overwrite because of downloads being not possible on compute nodes
+        self.prerun_cmds = []
+        #    f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/{self.benchmark_version}/{self.__bench}/benchmark.tpr'  # noqa: E501
+        self.executable_opts = ['-nb', self.nb_impl, '-s', 
+            f'{self.bench_name}/benchmark.tpr'
+        ]
+
+    @run_after('init')
     def setup_modules(self):
         if self.current_system.name in ('lumi'):
             if self.nb_impl == 'cpu':
-                self.modules = ['GROMACS-{gromacs_version}-cpeGNU-{pe_release}-CPU']
+                self.modules = ['GROMACS']
                 self.valid_prog_environs = ['cpeGNU']
             # Add module information for GPU enabled version    
             #elif self.nb_impl == 'gpu':
@@ -84,9 +91,9 @@ class lumi_gromacs_check(gromacs_check):
         # Setup system filtering
         valid_systems = {
             'cpu': {
-                1: ['lumi:cpu'],
-                2: ['lumi:cpu'],
-                4: ['lumi:cpu'],
+                1: ['lumi:small'],
+                2: ['lumi:small'],
+                #4: ['lumi:small'],
             },
             'gpu': {
                 1: ['lumi:gpu'],
@@ -99,21 +106,10 @@ class lumi_gromacs_check(gromacs_check):
         except KeyError:
             self.valid_systems = []
 
-        # Setup prog env. filtering
-        #if self.current_system.name in ('eiger', 'pilatus'):
-        #    self.valid_prog_environs = ['cpeGNU']
-        #elif self.current_system.name in ('ares'):
-        #    self.valid_prog_environs = ['gnu']
-
-        #if self.num_nodes in (6, 16):
-        #    self.tags |= {'production'}
-        #    if (self.nb_impl == 'gpu' and
-        #        self.bench_name == 'HECBioSim/hEGFRDimerSmallerPL'):
-        #        self.tags |= {'maintenance'}
 
     @run_before('run')
     def setup_run(self):
-        self.skip_if_no_procinfo()
+        #self.skip_if_no_procinfo()
 
         # Setup GPU run
         if self.nb_impl == 'gpu':
@@ -125,7 +121,7 @@ class lumi_gromacs_check(gromacs_check):
         # auto-detection
         arch = proc.arch
         if self.current_partition.fullname in ('lumi:gpu'):
-            arch = 'gfx908a'
+            arch = 'gfx90a'
 
         try:
             found = self.allref[self.num_nodes][arch][self.bench_name]
