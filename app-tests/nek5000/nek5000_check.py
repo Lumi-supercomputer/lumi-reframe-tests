@@ -3,8 +3,7 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class nek5000_check(rfm.RegressionTest):
-    #modules = ['']
-    #user_modules =
+    modules = ['Nek5000']
     valid_systems = ['lumi']
     valid_prog_environs = ['cpeGNU']
     modules = ['partition/C']
@@ -22,9 +21,9 @@ class nek5000_check(rfm.RegressionTest):
     @run_before('compile')
     def build_test(self):
         self.build_system.commands = [
-            f'export PATH=/pfs/lustrep4/users/maciszpin/EasyBuild/SW/LUMI-21.12/C/Nek5000/19.0-cpeGNU-21.12/bin:$PATH', # Replace by application module
-            f'export NEK_SOURCE_ROOT=/pfs/lustrep4/users/maciszpin/EasyBuild/SW/LUMI-21.12/C/Nek5000/19.0-cpeGNU-21.12/',
-            f'env CC=cc FC=ftn',
+            #f'export PATH=/pfs/lustrep4/users/maciszpin/EasyBuild/SW/LUMI-21.12/C/Nek5000/19.0-cpeGNU-21.12/bin:$PATH', # Replace by application module
+            #f'export NEK_SOURCE_ROOT=/pfs/lustrep4/users/maciszpin/EasyBuild/SW/LUMI-21.12/C/Nek5000/19.0-cpeGNU-21.12/',
+            #f'env CC=cc FC=ftn',
             'makenek bp5',
         ]
         self.prebuild_cmds = [
