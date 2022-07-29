@@ -55,8 +55,12 @@ class tensorflow_hvd_cnn(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def assert_found_nccl_launch(self):
-        return sn.assert_found(r'NCCL INFO Launch mode Parallel/CGMD',
-                               self.stdout)
+        return sn.all([
+            sn.assert_found(r'NCCL INFO Launch mode Parallel/CGMD',
+                            self.stdout),
+            sn.assert_found(r'img/sec on \d+ GPU\(s\): \S+ \+',
+                            self.stdout)
+        ])
 
     @performance_function('samples/sec')
     def samples_per_sec_per_gpu(self):
