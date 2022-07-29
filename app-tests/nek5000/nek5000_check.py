@@ -7,12 +7,13 @@ class nek5000_check(rfm.RegressionTest):
     #user_modules =
     valid_systems = ['lumi']
     valid_prog_environs = ['cpeGNU']
+    modules = ['partition/C']
     executable = './nek5000'
     strict_check = False
     descr = (f'Nek500 test')
     maintainers = ['']
     build_system = 'CustomBuild'
-    build_locally = False
+    #build_locally = False
 
     @run_after('init')
     def setup_run(self):
@@ -21,7 +22,9 @@ class nek5000_check(rfm.RegressionTest):
     @run_before('compile')
     def build_test(self):
         self.build_system.commands = [
-            f'export PATH=/net/people/plgrid/plgmszpindl/Nek5000/bin:$PATH', # Replace by application module
+            f'export PATH=/pfs/lustrep4/users/maciszpin/EasyBuild/SW/LUMI-21.12/C/Nek5000/19.0-cpeGNU-21.12/bin:$PATH', # Replace by application module
+            f'export NEK_SOURCE_ROOT=/pfs/lustrep4/users/maciszpin/EasyBuild/SW/LUMI-21.12/C/Nek5000/19.0-cpeGNU-21.12/',
+            f'env CC=cc FC=ftn',
             'makenek bp5',
         ]
         self.prebuild_cmds = [
