@@ -20,6 +20,13 @@ class tensorflow_distr_cnn(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def set_env_variables(self):
+        # There are two issues with `tensorflow.distributed` affecting
+        # this test: 1. TensorFlow tries to use `nvidia-smi` to detect
+        # the number of  gpus and 2. it get's the name of the compute
+        # nodes wrong, which makes the communication fail. Here we adapt
+        # the file `slurm_cluster_resolver_lumi.py` from TensorFlow to Lumi.
+        # The modification requires the user to define the environment
+        # variable `LUMI_VISIBLE_DEVICES` as done below.
         tf_slurm_cluster_resulver_file = os.path.join(
             self.current_system.resourcesdir, 'tensorflow',
             'slurm_cluster_resolver_lumi.py')
@@ -87,7 +94,7 @@ class tensorflow_distr_cnn(rfm.RunOnlyRegressionTest):
 
 
 # @rfm.simple_test
-# class tensorflow_keras_distr_cnn(tensorflow_hvd_cnn):
+# class tensorflow_keras_distr_cnn(tensorflow_distr_cnn):
 #     throughput_per_gpu = 441.4
 #
 #     @run_before('run')
