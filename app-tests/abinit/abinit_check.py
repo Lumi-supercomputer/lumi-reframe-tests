@@ -3,7 +3,7 @@ import reframe.utility.sanity as sn
 
 
 class abinit_check(rfm.RunOnlyRegressionTest):
-    modules = ['ABINIT-9.6.2']
+    modules = ['ABINIT']
     executable = 'abinit'
     maintainers = ['mszpindler']
     strict_check = False
@@ -33,7 +33,7 @@ class abinit_check(rfm.RunOnlyRegressionTest):
 
     @performance_function('s')
     def time(self):
-        return sn.extractsingle(r'overall_wall_time:\s+(?P<wtime>\S+)'
+        return sn.extractsingle(r'overall_wall_time:\s+(?P<wtime>\S+)',
                                 self.stdout, 'wtime', float)
 
 
