@@ -66,7 +66,7 @@ class build_rccl(rccl_test_base):
             "cd build;"
             "CXX=/opt/rocm-5.0.1/bin/hipcc cmake -DCMAKE_PREFIX_PATH=./install ..;"  # noqa: E501
             "make -j 16"
-             "'"
+            "'"
         )
 
     @sanity_function
@@ -79,6 +79,7 @@ class build_rccl_tests(rccl_test_base):
     local = True
     rccl = fixture(fetch_rccl, scope='session')
     rccl_tests = fixture(fetch_rccl_tests, scope='session')
+    rccl_binaries = fixture(build_rccl, scope='session')
 
     @sanity_function
     def validate_build(self):
@@ -164,12 +165,12 @@ class rccl_tests_allreduce(rccl_test_base):
         self.variables = {
             'NCCL_DEBUG': 'INFO',
             'NCCL_NET_GDR_LEVEL': '3',
-            'SINGULARITY_BIND': '/users/rafaelsarmiento/software/openmpi-4.1.2-install:/ext_openmpi,$SINGULARITY_BIND',  # noqa: E501
             'SINGULARITYENV_LD_LIBRARY_PATH': f'/opt/rocm-5.0.1/lib:'
                                               f'{self.rccl_dir}/rccl/build/:'
                                               f'{self.aws_plugin_dir}/aws-ofi-rccl/install/lib:'  # noqa: E501
                                               '/opt/cray/xpmem/2.3.2-2.2_6.13__g93dd7ee.shasta/lib64:'  # noqa: E501
-                                              '/ext_openmpi/lib:$SINGULARITYENV_LD_LIBRARY_PATH'  # noqa: E501
+                                              '/opt/ompi/lib:'
+                                              '$SINGULARITYENV_LD_LIBRARY_PATH'
         }
 
     @sanity_function
