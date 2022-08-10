@@ -154,8 +154,8 @@ class rccl_tests_allreduce(rccl_test_base):
     aws_plugin_binaries = fixture(build_aws_plugin, scope='session')
     reference = {
         'lumi:gpu': {
-            'busbw': (31.11, -0.05, None, 'GB/s'),
-            'algbw': (17.78, -0.05, None, 'GB/s'),
+            'busbw': (84.76, -0.05, None, 'GB/s'),
+            'algbw': (45.21, -0.05, None, 'GB/s'),
         }
     }
 
