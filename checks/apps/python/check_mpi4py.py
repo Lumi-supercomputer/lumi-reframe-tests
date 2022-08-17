@@ -29,7 +29,7 @@ class osu_gpu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
 
 
 @rfm.simple_test
-class osu_gpu_pt2pt_bw_single_node_test(osu_gpu_pt2pt_bw_base):
+class osu_gpu_pt2pt_bw_two_nodes_test(osu_gpu_pt2pt_bw_base):
     num_tasks_per_node = 1
     num_gpus_per_node = 1
     reference = {
@@ -38,7 +38,7 @@ class osu_gpu_pt2pt_bw_single_node_test(osu_gpu_pt2pt_bw_base):
 
 
 @rfm.simple_test
-class osu_gpu_pt2pt_bw_two_nodes_test(osu_gpu_pt2pt_bw_base):
+class osu_gpu_pt2pt_bw_single_node_test(osu_gpu_pt2pt_bw_base):
     num_tasks_per_node = 2
     num_gpus_per_node = 2
     reference = {
