@@ -27,7 +27,7 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     }
 
     @sanity_function
-    def assert_found_nccl_launch(self):
+    def assert_job_is_complete(self):
         return sn.all([
             sn.assert_found(r'Launch mode Parallel/CGMD', self.stdout),
             sn.assert_found(r'Total average', self.stdout),
@@ -53,6 +53,14 @@ class pytorch_distr_cnn(pytorch_distr_cnn_base):
     descr = 'Check the training throughput of a cnn'
     modules = ['PyTorch']
     executable = 'python cnn_distr.py'
+
+    @sanity_function
+    def assert_job_is_complete(self):
+        return sn.all([
+            sn.assert_found(r'Using network AWS Libfabric', self.stdout),
+            sn.assert_found(r'Selected Provider is cxi', self.stdout),
+            super().assert_job_is_complete()
+        ])
 
 
 @rfm.simple_test
@@ -98,3 +106,11 @@ class pytorch_distr_cnn_singularity_aws(pytorch_distr_cnn_singularity):
                 '$SINGULARITYENV_LD_LIBRARY_PATH'
             ),
         })
+
+    @sanity_function
+    def assert_job_is_complete(self):
+        return sn.all([
+            sn.assert_found(r'Using network AWS Libfabric', self.stdout),
+            sn.assert_found(r'Selected Provider is cxi', self.stdout),
+            super().assert_job_is_complete()
+        ])
