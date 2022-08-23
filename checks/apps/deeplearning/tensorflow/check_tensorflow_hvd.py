@@ -59,6 +59,14 @@ class tensorflow_hvd_cnn(tensorflow_hvd_cnn_base):
     modules = ['Horovod']
     executable = 'python tf2_hvd_synthetic_benchmark.py --batch-size=512'
 
+    @sanity_function
+    def assert_job_is_complete(self):
+        return sn.all([
+            sn.assert_found(r'Using network AWS Libfabric', self.stdout),
+            sn.assert_found(r'Selected Provider is cxi', self.stdout),
+            super().assert_job_is_complete()
+        ])
+
 
 @rfm.simple_test
 class tensorflow_keras_hvd_cnn(tensorflow_hvd_cnn_base):
