@@ -30,11 +30,9 @@ def osu_bw(
             errmsg = None
         raise SystemExit(errmsg)
 
-    device_id = int(os.environ['SLURM_LOCALID'])
-    with cp.cuda.Device(device_id):
-        s_buf = cp.arange(MAX_MSG_SIZE, dtype='i')
-        r_buf = cp.empty_like(s_buf)
-        cp.cuda.get_current_stream().synchronize()
+    s_buf = cp.arange(MAX_MSG_SIZE, dtype='i')
+    r_buf = cp.empty_like(s_buf)
+    cp.cuda.get_current_stream().synchronize()
 
     if myid == 0:
         print('# %s' % (BENCHMARH,))

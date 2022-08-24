@@ -9,10 +9,9 @@ class osu_gpu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
     descr = 'OSU GPU to GPU bandwith test with mpi4py and cupy'
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
-    modules = ['rocm/5.1.4', 'cray-python']
+    modules = ['rocm', 'CuPy', 'MPI4Py']
     num_tasks = 2
-    executable = 'python'
-    executable_opts = ['osu_bw_cupy.py']
+    executable = './select_gpu.sh python osu_bw_cupy.py'
     variables = {
         'MPICH_GPU_SUPPORT_ENABLED': '1'
     }
@@ -42,5 +41,5 @@ class osu_gpu_pt2pt_bw_single_node_test(osu_gpu_pt2pt_bw_base):
     num_tasks_per_node = 2
     num_gpus_per_node = 2
     reference = {
-        'lumi:gpu': {'bandwidth': (45723.99, -0.05, None, 'MB/s')}
+        'lumi:gpu': {'bandwidth': (125288.14, -0.05, None, 'MB/s')}
     }

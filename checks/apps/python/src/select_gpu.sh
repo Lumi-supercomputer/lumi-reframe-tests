@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export LOCAL_RANK=$SLURM_LOCALID
+export ROCR_VISIBLE_DEVICES=$SLURM_LOCALID
+exec $*
