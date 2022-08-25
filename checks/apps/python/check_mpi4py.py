@@ -9,11 +9,12 @@ class osu_gpu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
     descr = 'OSU GPU to GPU bandwith test with mpi4py and cupy'
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
-    modules = ['rocm', 'CuPy', 'MPI4Py']
+    modules = ['rocm', 'CuPy']
     num_tasks = 2
     executable = './select_gpu.sh python osu_bw_cupy.py'
     variables = {
-        'MPICH_GPU_SUPPORT_ENABLED': '1'
+        'MPICH_GPU_SUPPORT_ENABLED': '1',
+        'LD_PRELOAD': '${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so'
     }
 
     @sanity_function
