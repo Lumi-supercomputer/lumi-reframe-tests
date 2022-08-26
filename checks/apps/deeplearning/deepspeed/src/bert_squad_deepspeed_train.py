@@ -97,3 +97,4 @@ rank = torch.distributed.get_rank()
 if rank == 0:
     model_path_name = f'{args.model}-trained-deepspeed'
     torch.save(model.state_dict(), model_path_name)  # save model's state_dict
+    print('Training completed')
