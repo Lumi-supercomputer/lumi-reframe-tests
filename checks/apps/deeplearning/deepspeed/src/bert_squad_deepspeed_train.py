@@ -9,9 +9,12 @@ import torch
 import utility.data_processing as du
 from transformers import BertTokenizer, BertForQuestionAnswering
 from tokenizers import BertWordPieceTokenizer
+from datasets.utils import disable_progress_bar
+from datasets import disable_caching
 
 
-datasets.disable_caching()
+disable_progress_bar()
+disable_caching()
 
 # Benchmark settings
 parser = argparse.ArgumentParser(description='BERT finetuning on SQuAD')
@@ -97,4 +100,4 @@ rank = torch.distributed.get_rank()
 if rank == 0:
     model_path_name = f'{args.model}-trained-deepspeed'
     torch.save(model.state_dict(), model_path_name)  # save model's state_dict
-    print('Training completed')
+    print('Training complete')
