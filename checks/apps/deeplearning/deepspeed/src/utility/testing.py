@@ -2,8 +2,8 @@ import re
 import string
 import torch
 import numpy as np
+from datasets import load_metric
 from torch.nn import functional as F
-
 from rich import print
 from rich.console import Console
 from rich.highlighter import Highlighter
@@ -73,6 +73,7 @@ class EvalUtility():
         # self.set_rich_print()
 
     def results(self, logs=None):
+        metric = load_metric('squad')
         with torch.no_grad():
             outputs_eval = self.model(input_ids=self.input_ids,
                                       token_type_ids=self.token_type_ids,
@@ -103,24 +104,23 @@ class EvalUtility():
                 pred_ans = squad_eg.context[pred_char_start:]
 
             normalized_pred_ans = normalize_text(pred_ans)
-            normalized_true_ans = [normalize_text(squad_eg.answer_text[0])]
+            normalized_true_ans = [normalize_text(squad_eg.answer_text)]
             #                      for _ in squad_eg.all_answers]
             if normalized_pred_ans in normalized_true_ans:
                 count += 1
 
             answer_hl.start = pred_char_start
-            console.rule(Text(f'Example'), style='magenta')
+            metric_value = metric.compute(
+                predictions=[{'prediction_text': [normalized_pred_ans],
+                              'id': 'xxx'}],
+                references=[{'answers': {'answer_start': [pred_char_start],
+                                         'text': normalized_true_ans},
+                             'id': 'xxx'}]
+            )
+            console.rule(Text(f'{metric_value}'), style='magenta')
             print(':question:', question_hl(f'{squad_eg.question}'))
             print(':robot_face:', answer_hl(squad_eg.context))
-            print(':white_check_mark:',
-                  ref_hl(f'{squad_eg.answer_text[0]:30s}'))
-
-            # self.table.add_row(answer_hl(f' {squad_eg.question}'),
-            #                    # f' {normalized_pred_ans:30.30s}',
-            #                    answer_hl(f'{squad_eg.context}'),
-            #                    f' {squad_eg.answer_text:30s}')
-
-        # self.show_table()
+            print(':white_check_mark:', ref_hl(f'{squad_eg.answer_text:30s}'))
 
     def set_rich_print(self):
 
