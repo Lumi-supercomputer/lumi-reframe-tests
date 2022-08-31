@@ -4,11 +4,24 @@ import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
 
 
+class deepspeed_bert_fetch_data_tokenizer(rfm.RunOnlyRegressionTest):
+    '''Fixture for fetching the the dataset and tokenizer'''
+    local = True
+    modules = ['PyTorch']
+    prerun_cmds = ['. $SCRATCH/deeepspeed-env/bin/activate']
+    executable = 'python bert_squad_deepspeed_train.py --download-only'
+
+    @sanity_function
+    def validate_download(self):
+        return sn.assert_eq(self.job.exitcode, 0)
+
+
 class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
     descr = ('Check the training throughput of a BERT with Squad for the QA '
              'task with DeepSpeed')
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
+    bert_cache = fixture(deepspeed_bert_fetch_data_tokenizer, scope='session')
     sourcesdir = 'src'
     num_tasks = 32
     num_tasks_per_node = 8
@@ -24,19 +37,13 @@ class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
         'TORCH_EXTENSIONS_DIR': '$SCRATCH/torch_extensions'
     }
 
-    @run_after('init')
-    def prepare_build(self):
-        resourcesdir = os.path.join(self.current_system.resourcesdir,
-                                    'deepspeed', 'bert-base-uncased', 'cache')
-        self.prerun_cmds.append(f'cp -r {resourcesdir} .')
-
     @sanity_function
     def assert_world_rank(self):
         world_ranks = sn.extractall(r'world_rank=(?P<world_rank>\S+),',
                                     self.stdout, 'world_rank', float)
         return sn.all([
             sn.assert_eq(sorted(world_ranks), list(range(self.num_tasks))),
-            sn.assert_found(r'Training complete', self.stdout)
+            sn.assert_found(r'Finished Training', self.stdout)
         ])
 
     @performance_function('samples/sec')
@@ -52,7 +59,14 @@ class deepspeed_bert_qa_train(deepspeed_bert_qa_train_base):
                    'export TRANSFORMERS_OFFLINE=1',
                    '. $SCRATCH/deeepspeed-env/bin/activate',
                    'export HF_DATASETS_OFFLINE=1']
-    executable = 'python bert_squad_deepspeed_train.py --deepspeed_config ds_config.json --num-epochs 5'
+
+    @run_before('run')
+    def prepare_job(self):
+        bert_cache_dir = os.path.join(self.bert_cache.stagedir, 'cache')
+        self.executable = ('python bert_squad_deepspeed_train.py '
+                           f'--bert-cache-dir {bert_cache_dir} '
+                           '--deepspeed_config ds_config.json '
+                           '--num-epochs 5')
 
 
 # @rfm.simple_test
