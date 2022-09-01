@@ -13,19 +13,11 @@ class abinit_check(rfm.RunOnlyRegressionTest):
         self.prerun_cmds = [
                 #f'curl -LJO https://raw.githubusercontent.com/abinit/abinit/master/tests/paral/Input/t01.abi',
                 f'sed -i -e "/nstep/s/2/20/" t01.abi',
-                #f'curl -LJO https://raw.githubusercontent.com/abinit/abinit/master/tests/Psps_for_tests/14si.psp'
             ]
         self.executable_opts = ['t01.abi']
         self.variables = {
                 'ABI_PSPDIR': '.',
         }
-
-    @run_after('init')
-    def set_prgenv(self):
-        if self.current_system.name in ['lumi']:
-            self.valid_prog_environs = ['cpeGNU']
-        else:
-            self.valid_prog_environs = ['builtin']
 
     @sanity_function
     def assert_simulation_success(self):
@@ -39,26 +31,22 @@ class abinit_check(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class lumi_abinit_cpu_check(abinit_check):
-    scale = parameter(['small'])
     valid_systems = ['lumi']
-    refs_by_scale = {
-        'small': {
-            'lumi:cpu': {'time': (10.0, None, 5, 's')}, 
-        },
-        'large': {
-            #
-        }
-    }
+    valid_prog_environs = ['cpeGNU']
+    descr = f'Abinit CPU check'
+    num_tasks = 10
+    reference = {
+        'lumi:small': {'time': (10.0, None, 5, 's')}, 
+    } 
 
-    @run_after('init')
-    def setup_by_scale(self):
-        self.descr = f'Abinit CPU check (version: {self.scale})'
-        self.tags |= {'maintenance', 'production'}
-        if self.scale == 'small':
-            if self.current_system.name in ['lumi']:
-                self.num_tasks = 10
-
-        self.reference = self.refs_by_scale[self.scale]
+# Remove scale parametrization
+#    @run_after('init')
+#    def setup_by_scale(self):
+#        self.descr = f'Abinit CPU check (version: {self.scale})'
+#        if self.scale == 'small':
+#            self.num_tasks = 10
+#
+#        self.reference = self.refs_by_scale[self.scale]
 
 
 # Fix it: GPU enabled Abinit instance (module)
