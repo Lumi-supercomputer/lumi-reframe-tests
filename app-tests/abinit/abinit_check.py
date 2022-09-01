@@ -6,7 +6,7 @@ class abinit_check(rfm.RunOnlyRegressionTest):
     modules = ['ABINIT']
     executable = 'abinit'
     maintainers = ['mszpindler']
-    strict_check = False
+    strict_check = True
 
     @run_after('init')
     def set_input(self):
@@ -31,7 +31,7 @@ class abinit_check(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class lumi_abinit_cpu_check(abinit_check):
-    valid_systems = ['lumi']
+    valid_systems = ['lumi:small']
     valid_prog_environs = ['cpeGNU']
     descr = f'Abinit CPU check'
     num_tasks = 10
