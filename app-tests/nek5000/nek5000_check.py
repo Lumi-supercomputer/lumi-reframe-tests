@@ -3,10 +3,9 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class nek5000_check(rfm.RegressionTest):
-    modules = ['Nek5000']
     valid_systems = ['lumi']
     valid_prog_environs = ['cpeGNU']
-    modules = ['partition/C']
+    modules = ['partition/C', 'Nek5000']
     executable = './nek5000'
     strict_check = False
     descr = (f'Nek500 test')
@@ -44,5 +43,5 @@ class nek5000_check(rfm.RegressionTest):
 
     @performance_function('s')
     def time(self):
-        return sn.extractsingle(r'total elapsed time\s+[:]\s+(?P<wtime>\s+\S+)', # Fix scientific notation (E+) conversion
+        return sn.extractsingle(r'total elapsed time \s+ \: \s+(?P<wtime>\S+) sec', 
                                 self.stdout, 'wtime', float)
