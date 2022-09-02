@@ -74,14 +74,13 @@ class lumi_gromacs_check(gromacs_check):
 
     @run_after('init')
     def setup_modules(self):
-        if self.current_system.name in ('lumi'):
-            if self.nb_impl == 'cpu':
-                self.modules = ['GROMACS']
-                self.valid_prog_environs = ['cpeGNU']
-            # Add module information for GPU enabled version    
-            #elif self.nb_impl == 'gpu':
-            #    self.modules = ['GROMACS-{gromacs_version}-cpeGNU-{pe_release}-GPU']
-            #    self.valid_prog_environs = ['cpeGNU']
+        if self.nb_impl == 'cpu':
+            self.modules = ['GROMACS']
+            self.time_limit = '15m'
+        # Add module information for GPU enabled version    
+        #elif self.nb_impl == 'gpu':
+        #    self.modules = ['GROMACS-{gromacs_version}-cpeGNU-{pe_release}-GPU']
+        #    self.valid_prog_environs = ['cpeGNU']
 
     @run_after('init')
     def setup_filtering_criteria(self):
@@ -109,8 +108,6 @@ class lumi_gromacs_check(gromacs_check):
 
     @run_before('run')
     def setup_run(self):
-        #self.skip_if_no_procinfo()
-
         # Setup GPU run
         if self.nb_impl == 'gpu':
             self.num_gpus_per_node = 1

@@ -3,10 +3,10 @@ import reframe.utility.sanity as sn
 
 
 class cp2k_check(rfm.RunOnlyRegressionTest):
+    modules = ['CP2K']
     executable = 'cp2k.psmp'
     maintainers = ['mszpindler']
     strict_check = False
-    modules = ['CP2K']
 
     @run_after('init')
     def set_input(self):
@@ -15,12 +15,6 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
         #    ]
         self.executable_opts = ['H2O-256.inp']
 
-    @run_after('init')
-    def set_prgenv(self):
-        if self.current_system.name in ['lumi']:
-            self.valid_prog_environs = ['cpeGNU']
-        else:
-            self.valid_prog_environs = ['builtin']
 
     @sanity_function
     def assert_energy_diff(self):
@@ -47,59 +41,12 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class lumi_cp2k_cpu_check(cp2k_check):
-    scale = parameter(['small'])
-    valid_systems = ['lumi:standard', 'lumi:gpu']
-    refs_by_scale = {
-        'small': {
-            'lumi:standard': {'time': (152.644, None, 0.05, 's')},
-        },
-        'large': {
-            #
-        }
+    valid_systems = ['lumi:small']
+    valid_prog_environs = ['cpeGNU']
+    descr = f'CP2K CPU check'
+    reference = {
+        'lumi:standard': {'time': (152.644, None, 0.05, 's')},
     }
+    num_tasks = 256
+    num_tasks_per_node = 128
 
-    @run_after('init')
-    def setup_by_scale(self):
-        self.descr = f'CP2K CPU check (version: {self.scale})'
-        self.tags |= {'maintenance', 'production'}
-        if self.scale == 'small':
-            if self.current_system.name in ['lumi']:
-                self.num_tasks = 256
-                self.num_tasks_per_node = 128
-
-        self.reference = self.refs_by_scale[self.scale]
-
-    @run_before('run')
-    def set_task_distribution(self):
-        self.job.options = ['--distribution=block:block']
-        self.job.options = ['--time=5']
-
-@rfm.simple_test
-class lumi_cp2k_gpu_check(cp2k_check):
-    # Fix it: GPU enabled CP2K instance (module)
-    scale = parameter(['small'])
-    valid_systems = ['lumi:gpu']
-    refs_by_scale = {
-        'small': {
-            'lumi:gpu': {'time': (182.0, None, 0.05, 's')},
-        },
-        'large': {
-            #
-        }
-    }
-
-    @run_after('init')
-    def setup_by_scale(self):
-        self.descr = f'CP2K GPU check (version: {self.scale})'
-        if self.scale == 'small':
-            if self.current_system.name in ['lumi']:
-                self.num_tasks = 64
-                self.num_tasks_per_node = 64
-                self.num_gpus_per_node = 1
-                self.num_cpus_per_task = 2
-                self.variables = {
-                    'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-                }
-
-        self.reference = self.refs_by_scale[self.scale]
-        self.tags |= {'maintenance', 'production'}
