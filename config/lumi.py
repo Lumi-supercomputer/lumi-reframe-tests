@@ -261,7 +261,6 @@ site_configuration = {
         {
             'name': 'production',
             'options': [
-                '--unload-module=reframe',
                 '--exec-policy=async',
                 '--strict',
                 '--output=/project/%s/$USER/regression/production' % project,
