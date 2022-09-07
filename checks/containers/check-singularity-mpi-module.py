@@ -23,6 +23,9 @@ class singularity_cray_mpich_bindings_test(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def set_container_variables(self):
         self.container_platform = 'Singularity'
+        # The image was built from the singularity definition file from
+        # https://sarus.readthedocs.io/en/stable/user/user_guide.html?highlight=mpich#native-mpi-support-mpich-based  # noqa: E501
+        # and the OSU pt2pt tests were installed on it
         self.container_platform.image = 'osu-debian-jessie.sif'
         self.container_platform.command = '/home/osu/p2p_osu_bw'
 
