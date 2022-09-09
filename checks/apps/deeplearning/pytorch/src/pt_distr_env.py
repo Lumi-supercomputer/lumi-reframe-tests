@@ -15,15 +15,15 @@ class DistributedEnviron():
         hostnames = hostlist.expand_hostlist(os.environ['SLURM_JOB_NODELIST'])
         os.environ['MASTER_ADDR'] = hostnames[0]
         os.environ['MASTER_PORT'] = '39591'
-        os.environ['WORLD_SIZE'] = os.environ['SLURM_NNODES']
+        os.environ['WORLD_SIZE'] = os.environ['SLURM_NTASKS']
         os.environ['RANK'] = os.environ['SLURM_PROCID']
         os.environ['LOCAL_RANK'] = os.environ['SLURM_LOCALID']
 
 
 if __name__ == '__main__':
     distr_env = DistributedEnviron()
-    print(distr_env.master_addr)
-    print(distr_env.master_port)
-    print(distr_env.world_size)
-    print(distr_env.rank)
-    print(distr_env.local_rank)
+    print('master addr :', distr_env.master_addr)
+    print('master port :', distr_env.master_port)
+    print('world size  :', distr_env.world_size)
+    print('rank        :', distr_env.rank)
+    print('local rank  :', distr_env.local_rank)
