@@ -16,7 +16,7 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
         'NCCL_NET_GDR_LEVEL': '3'
     }
     throughput_per_gpu = 567.65
-    throughput_total = throughput_per_gpu * num_tasks * num_gpus_per_node
+    throughput_total = throughput_per_gpu * num_tasks
     reference = {
         'lumi:gpu': {
             'samples_per_sec_per_gpu': (throughput_per_gpu,
