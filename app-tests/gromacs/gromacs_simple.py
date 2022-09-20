@@ -72,7 +72,7 @@ class simple_gromacs_check(gromacs_check):
     def setup_nb(self):
         valid_systems = {
             'cpu': {
-                1: ['lumi:cpu'],
+                1: ['lumi:small'],
             },
             'gpu': {
                 1: ['lumi:gpu'],

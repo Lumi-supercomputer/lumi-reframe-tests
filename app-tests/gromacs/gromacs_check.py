@@ -87,7 +87,7 @@ class lumi_gromacs_check(gromacs_check):
             'cpu': {
                 1: ['lumi:small'],
                 2: ['lumi:small'],
-                #4: ['lumi:small'],
+                4: ['lumi:small'],
             },
             'gpu': {
                 1: ['lumi:gpu'],

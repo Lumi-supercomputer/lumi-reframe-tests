@@ -42,7 +42,7 @@ class lumi_cp2k_cpu_check(cp2k_check):
     valid_prog_environs = ['cpeGNU']
     descr = f'CP2K CPU check'
     reference = {
-        'lumi:standard': {'time': (152.644, None, 0.05, 's')},
+        'lumi:small: {'time': (152.644, None, 0.05, 's')},
     }
     num_tasks = 256
     num_tasks_per_node = 128

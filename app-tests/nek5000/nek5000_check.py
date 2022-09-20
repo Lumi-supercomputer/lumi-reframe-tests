@@ -3,7 +3,7 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class nek5000_check(rfm.RegressionTest):
-    valid_systems = ['lumi']
+    valid_systems = ['lumi:small']
     valid_prog_environs = ['cpeGNU']
     modules = ['partition/C', 'Nek5000']
     executable = './nek5000'
