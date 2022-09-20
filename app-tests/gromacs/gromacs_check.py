@@ -67,7 +67,6 @@ class lumi_gromacs_check(gromacs_check):
     def overwrite_cmds(self):
     # Need to overwrite because of downloads being not possible on compute nodes
         self.prerun_cmds = []
-        #    f'curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/{self.benchmark_version}/{self.__bench}/benchmark.tpr'  # noqa: E501
         self.executable_opts = ['-nb', self.nb_impl, '-s', 
             f'{self.bench_name}/benchmark.tpr'
         ]
@@ -77,10 +76,6 @@ class lumi_gromacs_check(gromacs_check):
         if self.nb_impl == 'cpu':
             self.modules = ['GROMACS']
             self.time_limit = '15m'
-        # Add module information for GPU enabled version    
-        #elif self.nb_impl == 'gpu':
-        #    self.modules = ['GROMACS-{gromacs_version}-cpeGNU-{pe_release}-GPU']
-        #    self.valid_prog_environs = ['cpeGNU']
 
     @run_after('init')
     def setup_filtering_criteria(self):

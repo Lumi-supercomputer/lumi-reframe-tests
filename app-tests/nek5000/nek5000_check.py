@@ -11,7 +11,6 @@ class nek5000_check(rfm.RegressionTest):
     descr = (f'Nek500 test')
     maintainers = ['']
     build_system = 'CustomBuild'
-    #build_locally = False
 
     @run_after('init')
     def setup_run(self):

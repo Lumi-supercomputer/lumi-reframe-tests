@@ -11,7 +11,6 @@ class abinit_check(rfm.RunOnlyRegressionTest):
     @run_after('init')
     def set_input(self):
         self.prerun_cmds = [
-                #f'curl -LJO https://raw.githubusercontent.com/abinit/abinit/master/tests/paral/Input/t01.abi',
                 f'sed -i -e "/nstep/s/2/20/" t01.abi',
             ]
         self.executable_opts = ['t01.abi']

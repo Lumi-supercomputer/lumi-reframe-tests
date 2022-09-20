@@ -32,10 +32,6 @@ class simple_gromacs_check(gromacs_check):
             if self.nb_impl == 'cpu':
                 self.modules = ['GROMACS-{gromacs_version}-cpeGNU-{pe_release}-CPU']
                 self.valid_prog_environs = ['cpeGNU']
-            # Add module information for GPU enabled version    
-            #elif self.nb_impl == 'gpu':
-            #    self.modules = ['GROMACS-{gromacs_version}-cpeGNU-{pe_release}-GPU']
-            #    self.valid_prog_environs = ['cpeGNU']
 
     @run_after('init')
     def prepare_test(self):
@@ -102,17 +98,12 @@ class simple_gromacs_check(gromacs_check):
 
     @sanity_function
     def assert_energy_readout(self):
-        #energy_diff = sn.abs(energy - self.energy_ref)
         return sn.assert_found('Finished mdrun', 'md.log')
 
 
     @run_before('run')
     def setup_run(self):
         self.skip_if_no_procinfo()
-
-        # Setup GPU run
-        if self.nb_impl == 'gpu':
-            self.num_gpus_per_node = 1
 
         proc = self.current_partition.processor
 

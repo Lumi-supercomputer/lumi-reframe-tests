@@ -10,9 +10,6 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def set_input(self):
-        #self.prerun_cmds = [
-        #        f'curl -LJO https://raw.githubusercontent.com/cp2k/cp2k/master/benchmarks/QS/H2O-256.inp'
-        #    ]
         self.executable_opts = ['H2O-256.inp']
 
 
