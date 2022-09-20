@@ -12,53 +12,37 @@ class lumi_gromacs_check(gromacs_check):
     num_nodes = parameter([1, 2, 4], loggable=True)
     allref = {
         1: {
-            'gfx90a': { # Copied from CSCS check for sm_60
-                'HECBioSim/Crambin': (195.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (78.0, None, None, 'ns/day'),   
-                'HECBioSim/hEGFRDimer': (8.5, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerSmallerPL': (9.2, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (3.0, None, None, 'ns/day'),
+            'gfx90a': { 
             },
-            'zen3': { # Copied from CSCS check for zen2 
+            'zen3': { 
                 'HECBioSim/Crambin': (320.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (120.0, None, None, 'ns/day'),  
-                'HECBioSim/hEGFRDimer': (16.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerSmallerPL': (31.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (7.0, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (115.503, None, None, 'ns/day'),  
+                'HECBioSim/hEGFRDimer': (18.938, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerSmallerPL': (33.785, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (7.759, None, None, 'ns/day'),
             },
         },
         2: {
-            'gfx90a': { # Copied from CSCS check for sm_60
-                'HECBioSim/Crambin': (202.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (111.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (15.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerSmallerPL': (18.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (6.0, None, None, 'ns/day'),
+            'gfx90a': { 
             },
-            'zen3': { # Copied from CSCS check for zen2 
-                'HECBioSim/Crambin': (355.0, None, None, 'ns/day'),
+            'zen3': { # Collected initial performance numbers after SS11 upgrade
+                'HECBioSim/Crambin': (280.267, None, None, 'ns/day'),
                 'HECBioSim/Glutamine-Binding-Protein': (210.0, None, None, 'ns/day'),
                 'HECBioSim/hEGFRDimer': (31.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerSmallerPL': (53.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (13.0, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerSmallerPL': (30.571, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (14.269, None, None, 'ns/day'),
             },
         },
         4: {
-            'gfx90a': { # Copied from CSCS check for sm_60
-                'HECBioSim/Crambin': (200.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (133.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (22.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerSmallerPL': (28.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (10.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRtetramerPair': (5.0, None, None, 'ns/day'),
+            'gfx90a': { 
             },
-            'zen3': { # Copied from CSCS check for zen2 
-                'HECBioSim/Crambin': (340.0, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (230.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (56.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerSmallerPL': (80.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (25.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRtetramerPair': (11.0, None, None, 'ns/day'),
+            'zen3': { # Collected initial performance numbers after SS11 upgrade
+                'HECBioSim/Crambin': (295.263, None, None, 'ns/day'),
+                'HECBioSim/Glutamine-Binding-Protein': (190.459, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimer': (32.232, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerSmallerPL': (34.619, None, None, 'ns/day'),
+                'HECBioSim/hEGFRDimerPair': (21.66, None, None, 'ns/day'),
+                'HECBioSim/hEGFRtetramerPair': (9.58, None, None, 'ns/day'),
             },
         },
     }

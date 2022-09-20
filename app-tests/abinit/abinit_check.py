@@ -35,5 +35,5 @@ class lumi_abinit_cpu_check(abinit_check):
     descr = f'Abinit CPU check'
     num_tasks = 10
     reference = {
-        'lumi:small': {'time': (10.0, None, 5, 's')}, 
+        'lumi:small': {'time': (10.0, None, 0.5, 's')}, 
     } 
