@@ -8,13 +8,10 @@ class nek5000_check(rfm.RegressionTest):
     modules = ['partition/C', 'Nek5000']
     executable = './nek5000'
     strict_check = False
-    descr = (f'Nek500 test')
+    descr = f'Nek500 test'
     maintainers = ['']
     build_system = 'CustomBuild'
-
-    @run_after('init')
-    def setup_run(self):
-        self.num_tasks = 32
+    num_tasks = 32
 
     @run_before('compile')
     def build_test(self):

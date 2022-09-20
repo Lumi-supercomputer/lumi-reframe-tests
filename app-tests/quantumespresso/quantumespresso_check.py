@@ -6,7 +6,7 @@ class quantumespresso_check(rfm.RunOnlyRegressionTest):
     modules = ['QuantumESPRESSO']
     executable = 'pw.x'
     maintainers = ['mszpindler']
-    strict_check = False
+    strict_check = True
 
     @run_after('init')
     def prepare_test(self):
