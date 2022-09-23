@@ -7,7 +7,6 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
     executable = 'cp2k.psmp'
     maintainers = ['mszpindler']
     executable_opts = ['H2O-256.inp']
-    strict_check = True
 
     @sanity_function
     def assert_energy_diff(self):

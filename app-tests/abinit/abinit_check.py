@@ -11,7 +11,6 @@ class abinit_check(rfm.RunOnlyRegressionTest):
     self.variables = {
         'ABI_PSPDIR': '.',
     }
-    strict_check = True
 
     @sanity_function
     def assert_simulation_success(self):

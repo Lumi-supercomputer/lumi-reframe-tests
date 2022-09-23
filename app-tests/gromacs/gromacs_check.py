@@ -8,6 +8,8 @@ class lumi_gromacs_check(gromacs_check):
     use_multithreading = False
     executable_opts += ['-dlb yes', '-ntomp 1', '-npme -1']
     valid_prog_environs = ['cpeGNU']
+    modules = ['GROMACS']
+    time_limit = '15m'
 
     num_nodes = parameter([1, 2, 4], loggable=True)
     allref = {
@@ -55,11 +57,6 @@ class lumi_gromacs_check(gromacs_check):
             f'{self.bench_name}/benchmark.tpr'
         ]
 
-    @run_after('init')
-    def setup_modules(self):
-        if self.nb_impl == 'cpu':
-            self.modules = ['GROMACS']
-            self.time_limit = '15m'
 
     @run_after('init')
     def setup_filtering_criteria(self):

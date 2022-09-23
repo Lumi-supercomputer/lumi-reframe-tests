@@ -7,7 +7,6 @@ class quantumespresso_check(rfm.RunOnlyRegressionTest):
     executable = 'pw.x'
     executable_opts += ['-in', 'ausurf.in', '-pd', '.true.']
     maintainers = ['mszpindler']
-    strict_check = True
 
     @sanity_function
     def assert_simulation_success(self):
