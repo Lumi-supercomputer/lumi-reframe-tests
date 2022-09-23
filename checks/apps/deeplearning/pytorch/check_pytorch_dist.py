@@ -7,6 +7,7 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
     sourcesdir = 'src'
+    exclusive_access = True
     num_tasks = 32
     num_tasks_per_node = 8
     num_gpus_per_node = 8
