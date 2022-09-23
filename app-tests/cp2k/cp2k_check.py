@@ -6,12 +6,8 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
     modules = ['CP2K']
     executable = 'cp2k.psmp'
     maintainers = ['mszpindler']
-    strict_check = False
-
-    @run_after('init')
-    def set_input(self):
-        self.executable_opts = ['H2O-256.inp']
-
+    executable_opts = ['H2O-256.inp']
+    strict_check = True
 
     @sanity_function
     def assert_energy_diff(self):

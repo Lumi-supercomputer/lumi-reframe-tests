@@ -5,12 +5,9 @@ import reframe.utility.sanity as sn
 class quantumespresso_check(rfm.RunOnlyRegressionTest):
     modules = ['QuantumESPRESSO']
     executable = 'pw.x'
+    executable_opts += ['-in', 'ausurf.in', '-pd', '.true.']
     maintainers = ['mszpindler']
     strict_check = True
-
-    @run_after('init')
-    def prepare_test(self):
-        self.executable_opts += ['-in', 'ausurf.in', '-pd', '.true.']
 
     @sanity_function
     def assert_simulation_success(self):

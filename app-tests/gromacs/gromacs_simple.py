@@ -8,6 +8,8 @@ class simple_gromacs_check(gromacs_check):
     maintainers = ['mszpindler']
     use_multithreading = False
     executable_opts += ['-dlb yes', '-ntomp 1', '-npme -1']
+    modules = ['GROMACS']
+    valid_prog_environs = ['cpeGNU']
     pe_release = '21.12'
     gromacs_version = '2021.5'
     num_nodes = 1
@@ -25,13 +27,6 @@ class simple_gromacs_check(gromacs_check):
             }
         }
     }
-
-    @run_after('init')
-    def setup_modules(self):
-        if self.current_system.name in ('lumi'):
-            if self.nb_impl == 'cpu':
-                self.modules = ['GROMACS-{gromacs_version}-cpeGNU-{pe_release}-CPU']
-                self.valid_prog_environs = ['cpeGNU']
 
     @run_after('init')
     def prepare_test(self):

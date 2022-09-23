@@ -6,17 +6,12 @@ class abinit_check(rfm.RunOnlyRegressionTest):
     modules = ['ABINIT']
     executable = 'abinit'
     maintainers = ['mszpindler']
+    prerun_cmds = ['sed -i -e "/nstep/s/2/20/" t01.abi']
+    executable_opts = ['t01.abi']
+    self.variables = {
+        'ABI_PSPDIR': '.',
+    }
     strict_check = True
-
-    @run_after('init')
-    def set_input(self):
-        self.prerun_cmds = [
-                f'sed -i -e "/nstep/s/2/20/" t01.abi',
-            ]
-        self.executable_opts = ['t01.abi']
-        self.variables = {
-                'ABI_PSPDIR': '.',
-        }
 
     @sanity_function
     def assert_simulation_success(self):
