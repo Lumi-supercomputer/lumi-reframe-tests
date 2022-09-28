@@ -13,7 +13,7 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     num_gpus_per_node = 8
     variables = {
         'NCCL_DEBUG': 'INFO',
-        'NCCL_SOCKET_IFNAME': 'hsn0',
+        'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
         'NCCL_NET_GDR_LEVEL': '3'
     }
     throughput_per_gpu = 567.65
