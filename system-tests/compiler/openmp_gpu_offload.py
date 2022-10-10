@@ -5,8 +5,8 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class vAdd_ompGPU(rfm.RegressionTest):
     descr = 'Checks OpenMP target offload on GPU'
-    valid_systems = ['lumi:eap']
-    valid_prog_environs = ['PrgEnv-cray', 'builtin-hip']
+    valid_systems = ['lumi:gpu']
+    valid_prog_environs = ['cpeCray', 'cpeAOCC', 'builtin-hip']
     num_gpus_per_node = 1
     build_system = 'Make'
     sourcesdir = 'https://code.ornl.gov/olcf/vector_addition'
