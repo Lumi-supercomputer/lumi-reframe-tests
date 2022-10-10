@@ -18,7 +18,7 @@ site_configuration = {
                         'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'cpeAMD',
+                        'cpeAOCC',
                         'cpeCray',
                         'cpeGNU',
                     ],
@@ -43,7 +43,7 @@ site_configuration = {
                         'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'cpeAMD',
+                        'cpeAOCC',
                         'cpeCray',
                         'cpeGNU',
                     ],
@@ -75,7 +75,7 @@ site_configuration = {
                         'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'cpeAMD',
+                        'cpeAOCC',
                         'cpeCray',
                         'cpeGNU',
                     ],
@@ -93,7 +93,7 @@ site_configuration = {
                 },
                 {
                     'name': 'eap',
-                    'descr': 'Multicore nodes (AMD EPYC 7662, 256|512|1024GB/cn), GPU (AMD Instinct MI100 4/cn)',
+                    'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250X 8/cn)',
                     'scheduler': 'slurm',
                     'time_limit': '10m',
                     'container_platforms': [
@@ -109,8 +109,8 @@ site_configuration = {
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                     ],
-                    'max_jobs': 10,
-                    'modules': ['LUMI/21.12', 'partition/EAP', 'rocm'],
+                    'max_jobs': 1,
+                    'modules': ['LUMI', 'partition/EAP'],
                     'access': ['--partition eap',
                                f'--account={project}'],
                     'resources': [
@@ -120,14 +120,14 @@ site_configuration = {
                         },
                         {
                             'name': '_rfm_gpu',
-                            'options': ['--gres=gpu:mi100:{num_gpus_per_node}']
+                            'options': ['--gres=gpu:mi250:{num_gpus_per_node}']
                         },
                     ],
                     'launcher': 'srun'
-                    },
-                    {
+                },
+                {
                     'name': 'gpu',
-                    'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250 8/cn)',
+                    'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250X 8/cn)',
                     'scheduler': 'slurm',
                     'time_limit': '10m',
                     'container_platforms': [
@@ -144,7 +144,7 @@ site_configuration = {
                         'PrgEnv-gnu',
                     ],
                     'max_jobs': 10,
-                    'modules': ['LUMI/21.12', 'partition/G'],
+                    'modules': ['LUMI', 'partition/G'],
                     'access': ['--partition gpu',
                                f'--account={project}'],
                     'resources': [
@@ -158,7 +158,7 @@ site_configuration = {
                         },
                     ],
                     'launcher': 'srun'
-                    },
+                },
             ]
         },
         {
@@ -180,7 +180,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-aocc',
             'target_systems': ['lumi'],
-            'modules': ['cpeAMD']
+            'modules': ['PrgEnv-aocc']
         },
         {
             'name': 'PrgEnv-cray',
@@ -197,9 +197,9 @@ site_configuration = {
              'modules': ['PrgEnv-intel']
          },
         {
-            'name': 'cpeAMD',
+            'name': 'cpeAOCC',
             'target_systems': ['lumi'],
-            'modules': ['cpeAMD']
+            'modules': ['cpeAOCC']
         },
         {
             'name': 'cpeCray',
@@ -239,8 +239,8 @@ site_configuration = {
             'cflags': ['-I$MPICH_DIR/include'],
             'ldflags': ['-L$MPICH_DIR/lib', '-lmpi', '-L$CRAY_MPICH_ROOTDIR/gtl/lib/', '-lmpi_gtl_hsa'],
             'cppflags': ['-D__HIP_PLATFORM_AMD__'],
-            #'modules': ['rocm'],
-            'target_systems': ['lumi']
+            'modules': ['rocm', 'craype-accel-amd-gfx90a'],
+            'target_systems': ['lumi:gpu']
         }
     ],
     'logging': [
