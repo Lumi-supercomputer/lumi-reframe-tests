@@ -4,14 +4,14 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class HipInfo(rfm.RegressionTest):
-    valid_systems = ['lumi:eap']
-    valid_prog_environs = ['builtin']
+    valid_systems = ['lumi:gpu']
+    valid_prog_environs = ['builtin-hip']
+    modules = ['rocm']
     build_system = 'SingleSource'
-    #curl -sO https://raw.githubusercontent.com/ROCm-Developer-Tools/HIP/develop/samples/1_Utils/hipInfo/hipInfo.cpp
     sourcepath = 'hipInfo.cpp'
     executable = 'hipInfo'
     build_locally = False
-    num_gpus_per_node = 4
+    num_gpus_per_node = 8
 
     @run_before('compile')
     def set_compiler_flags(self):
