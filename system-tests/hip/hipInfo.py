@@ -11,6 +11,7 @@ class HipInfo(rfm.RegressionTest):
     sourcepath = 'hipInfo.cpp'
     executable = 'hipInfo'
     build_locally = False
+    maintainers = ['mszpindler']
     num_gpus_per_node = 8
 
     @run_before('compile')
