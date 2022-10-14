@@ -55,7 +55,7 @@ train_loader = DataLoader(
     batch_size=batch_size_per_gpu,
     shuffle=False,
     sampler=train_sampler,
-    num_workers=16
+    # num_workers=16
 )
 
 
