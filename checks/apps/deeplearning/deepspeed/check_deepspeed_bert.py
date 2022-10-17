@@ -7,8 +7,7 @@ from reframe.core.backends import getlauncher
 class deepspeed_bert_fetch_data_tokenizer(rfm.RunOnlyRegressionTest):
     '''Fixture for fetching the the dataset and tokenizer'''
     local = True
-    modules = ['PyTorch']
-    prerun_cmds = ['. $SCRATCH/deeepspeed-env/bin/activate']
+    modules = ['DeepSpeed']
     executable = 'python bert_squad_deepspeed_train.py --download-only'
 
     @sanity_function
@@ -59,8 +58,9 @@ class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class deepspeed_bert_qa_train(deepspeed_bert_qa_train_base):
-    modules = ['PyTorch']
-    prerun_cmds = ['. $SCRATCH/deeepspeed-env/bin/activate']
+    # Besides `deepspeed`, the packages`transformers`, `datasets` and `rich`
+    # are needed to run this test
+    modules = ['DeepSpeed']
 
     @run_before('run')
     def prepare_job(self):
