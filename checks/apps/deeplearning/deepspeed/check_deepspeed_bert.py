@@ -23,6 +23,9 @@ class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['builtin']
     bert_cache = fixture(deepspeed_bert_fetch_data_tokenizer, scope='session')
     sourcesdir = 'src'
+    executable = 'python bert_squad_deepspeed_train.py'
+    executable_opts = ['--deepspeed_config ds_config.json',
+                       '--num-epochs 5']
     num_tasks = 32
     num_tasks_per_node = 8
     num_gpus_per_node = 8
@@ -34,7 +37,9 @@ class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
         'NCCL_DEBUG': 'INFO',
         'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
         'NCCL_NET_GDR_LEVEL': '3',
-        'TORCH_EXTENSIONS_DIR': '$SCRATCH/torch_extensions'
+        'TORCH_EXTENSIONS_DIR': './torch_extensions',
+        'TRANSFORMERS_OFFLINE': '1',
+        'HF_DATASETS_OFFLINE': '1'
     }
 
     @sanity_function
@@ -55,43 +60,55 @@ class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class deepspeed_bert_qa_train(deepspeed_bert_qa_train_base):
     modules = ['PyTorch']
-    prerun_cmds = ['module unload aws-ofi-rccl',
-                   'export TRANSFORMERS_OFFLINE=1',
-                   '. $SCRATCH/deeepspeed-env/bin/activate',
-                   'export HF_DATASETS_OFFLINE=1']
+    prerun_cmds = ['. $SCRATCH/deeepspeed-env/bin/activate']
 
     @run_before('run')
     def prepare_job(self):
         bert_cache_dir = os.path.join(self.bert_cache.stagedir, 'cache')
-        self.executable = ('python bert_squad_deepspeed_train.py '
-                           f'--bert-cache-dir {bert_cache_dir} '
-                           '--deepspeed_config ds_config.json '
-                           '--num-epochs 5')
+        self.executable_opts.append(f'--bert-cache-dir {bert_cache_dir}')
 
 
-# @rfm.simple_test
+@rfm.simple_test
 class deepspeed_bert_qa_train_singularity(deepspeed_bert_qa_train_base):
+    # Using a container from https://hub.docker.com/r/rocm/deepspeed
     # The container used here doesn't include all the packages needed to run
     # this test:
     # MPICC=mpicc pip install --user mpi4py
     # pip install --user datasets transformers tokenizers
+    modules = ['OpenMPI']
+
     @run_before('run')
     def set_container_variables(self):
         self.container_platform = 'Singularity'
         self.container_platform.image = os.path.join(
             self.current_system.resourcesdir,
             'deepspeed',
-            'deepspeed_rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.10.0.sif'
+            'deepspeed_rocm5.2.3_ubuntu20.04_py3.7_pytorch_1.12.1_deepspeed.sif'  # noqa E501
         )
-        self.container_platform.mount_points = [('$SCRATCH', '$SCRATCH')]
-        self.container_platform.command = (
-            "bash -c '"
-            "cd /rfm_workdir; "
-            "export TRANSFORMERS_OFFLINE=1; "
-            "export HF_DATASETS_OFFLINE=1; "
-            "python bert_squad_deepspeed_train.py "
-            "--deepspeed_config ds_config.json --num-epochs 5'"
+        # FIXME: copy of `comm.py` that uses `hostname -i`
+        # instead of `hostname -I`
+        comm_py = os.path.join(
+            self.current_system.resourcesdir,
+            'deepspeed', 'comm.py'
         )
+        # FIXME: The current tag misses the `quantizer_hip.h` ops file
+        quantizer_hip = os.path.join(
+            self.current_system.resourcesdir,
+            'deepspeed', 'quantizer_hip.h'
+        )
+        deepspeed_dir = '/opt/conda/lib/python3.7/site-packages/deepspeed'
+        self.container_platform.mount_points = [
+            ('$SCRATCH', '$SCRATCH'),
+            (self.bert_cache.stagedir, '/bert_cache_dir'),
+            # FIXME: Mounting missing deepspeed files or files needing changes
+            (comm_py, os.path.join(deepspeed_dir, 'comm/comm.py')),
+            (quantizer_hip, os.path.join(deepspeed_dir, 'ops/csrc/includes/quantizer_hip.h'))  # noqa E501
+        ]
+        self.container_platform.command = ' '.join([
+            self.executable,
+            *self.executable_opts,
+            '--bert-cache-dir /bert_cache_dir/cache'
+        ])
 
     @run_before('run')
     def set_launcher(self):
