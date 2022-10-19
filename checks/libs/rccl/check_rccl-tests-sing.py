@@ -7,7 +7,12 @@ from reframe.core.backends import getlauncher
 class fetch_rccl(rfm.RunOnlyRegressionTest):
     '''Fixture for fetching RCCL.'''
     local = True
-    executable = 'git clone git@github.com:ROCmSoftwarePlatform/rccl.git'  # noqa: E501
+    url_tag = 'rocm-5.2.3.tar.gz'
+    file_name = f'rccl-{url_tag}'
+    executable = f'curl -LJO https://github.com/ROCmSoftwarePlatform/rccl/archive/refs/tags/{url_tag}'  # noqa: E501
+    postrun_cmds = [
+        f'tar xzf {file_name}'
+    ]
 
     @sanity_function
     def validate_download(self):
@@ -17,7 +22,12 @@ class fetch_rccl(rfm.RunOnlyRegressionTest):
 class fetch_rccl_tests(rfm.RunOnlyRegressionTest):
     '''Fixture for fetching the rccl-tests.'''
     local = True
-    executable = 'git clone git@github.com:ROCmSoftwarePlatform/rccl-tests.git'  # noqa: E501
+    repo_name = 'rccl-tests'
+    executable = f'git clone -b develop git@github.com:ROCmSoftwarePlatform/{repo_name}.git'  # noqa: E501
+    postrun_cmds = [
+        f'cd {repo_name};'
+        'git checkout 3fbd328'
+    ]
 
     @sanity_function
     def validate_download(self):
@@ -27,7 +37,12 @@ class fetch_rccl_tests(rfm.RunOnlyRegressionTest):
 class fetch_aws_ofi_rccl_plugin(rfm.RunOnlyRegressionTest):
     '''Fixture for fetching the AWS libfabric plugin.'''
     local = True
-    executable = 'git clone git@github.com:ROCmSoftwarePlatform/aws-ofi-rccl.git'  # noqa: E501
+    repo_name = 'aws-ofi-rccl'
+    executable = f'git clone -b cxi git@github.com:ROCmSoftwarePlatform/{repo_name}.git'  # noqa: E501
+    postrun_cmds = [
+        f'cd {repo_name};'
+        'git checkout 66b3b31'
+    ]
 
     @sanity_function
     def validate_download(self):
@@ -44,7 +59,7 @@ class rccl_test_base(rfm.RunOnlyRegressionTest):
         self.container_platform.image = os.path.join(
             self.current_system.resourcesdir,
             'deepspeed',
-            'deepspeed_rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.10.0.sif'
+            'deepspeed_rocm5.2.3_ubuntu20.04_py3.7_pytorch_1.12.1_deepspeed.sif'  # noqa: E501
         )
 
 
@@ -61,10 +76,10 @@ class build_rccl(rccl_test_base):
         ]
         self.container_platform.command = (
             "bash -c '"
-            f"cd {self.rccl_dir}/rccl; "
+            f"cd {self.rccl_dir}/{self.rccl.file_name[:-7]}; "
             "mkdir build;"
             "cd build;"
-            "CXX=/opt/rocm-5.0.1/bin/hipcc cmake -DCMAKE_PREFIX_PATH=./install ..;"  # noqa: E501
+            "CXX=/opt/rocm/bin/hipcc cmake -DCMAKE_PREFIX_PATH=./install ..;"  # noqa: E501
             "make -j 16"
             "'"
         )
@@ -83,8 +98,13 @@ class build_rccl_tests(rccl_test_base):
 
     @sanity_function
     def validate_build(self):
+        build_dir = os.path.join(
+            self.rccl_tests.stagedir,
+            self.rccl_tests.repo_name,
+            'build'
+        )
         num_binaries = sn.count(
-            sn.glob(f'{self.rccl_tests.stagedir}/rccl-tests/build/*')
+            sn.glob(f'{build_dir}/*')
         )
         return sn.assert_eq(num_binaries, 11)
 
@@ -98,23 +118,31 @@ class build_rccl_tests(rccl_test_base):
         self.container_platform.command = (
             "bash -c '"
             f"cd {self.rccl_tests_dir}/rccl-tests; "
-            f"make MPI=1 MPI_HOME=/opt/ompi HIP_HOME=/opt/rocm-5.0.1/hip RCCL_HOME={self.rccl_dir}/rccl/build -j 16"  # noqa: E501
+            f"make MPI=1 MPI_HOME=/opt/ompi HIP_HOME=/opt/rocm/hip RCCL_HOME={self.rccl_dir}/rccl/build -j 16"  # noqa: E501
             "'"
         )
 
 
 class build_aws_plugin(rccl_test_base):
-    '''Fixture for building the OSU benchmarks'''
+    '''Fixture for building the OSU benchmarks.
+
+    This needs to be built on a compute node since it needs
+    network libraries only available there.
+    '''
     rccl = fixture(fetch_rccl, scope='session')
     rccl_tests = fixture(fetch_rccl_tests, scope='session')
     aws_plugin = fixture(fetch_aws_ofi_rccl_plugin, scope='session')
     rccl_binaries = fixture(build_rccl, scope='session')
-    modules = ['singularity-bindings/system-cpeGNU-22.06-noglibc']
+    modules = ['singularity-bindings/system-cpeGNU-22.08-noglibc']
 
     @sanity_function
     def validate_build(self):
-        return sn.path_isfile(f'{self.aws_plugin.stagedir}/aws-ofi-rccl/'
-                              'install/lib/librccl-net.so.0.0.0')
+        lib_dir = os.path.join(
+            self.aws_plugin.stagedir,
+            self.aws_plugin.repo_name,
+            'install', 'lib'
+        )
+        return sn.path_isfile(f'{lib_dir}/install/lib/librccl-net.so.0.0.0')
 
     @run_before('run')
     def set_container_variables(self):
@@ -129,7 +157,7 @@ class build_aws_plugin(rccl_test_base):
             f"cd {self.aws_plugin_dir}/aws-ofi-rccl; "
             "./autogen.sh;"
             f"CC=mpicc ./configure --with-libfabric=/opt/cray/libfabric/1.15.0.0 "  # noqa: E501
-            f"                     --with-hip=/opt/rocm-5.0.1 "
+            f"                     --with-hip=/opt/rocm "
             f"                     --with-rccl={self.rccl_dir}/rccl/build "
             f"                     --with-mpi=/opt/ompi "
             f"                     --prefix=$PWD/install;"
@@ -143,7 +171,7 @@ class build_aws_plugin(rccl_test_base):
 class rccl_tests_allreduce(rccl_test_base):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
-    modules = ['singularity-bindings/system-cpeGNU-22.06']
+    modules = [f'singularity-bindings']
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
@@ -165,7 +193,7 @@ class rccl_tests_allreduce(rccl_test_base):
         self.variables = {
             'NCCL_DEBUG': 'INFO',
             'NCCL_NET_GDR_LEVEL': '3',
-            'SINGULARITYENV_LD_LIBRARY_PATH': f'/opt/rocm-5.0.1/lib:'
+            'SINGULARITYENV_LD_LIBRARY_PATH': f'/opt/rocm/lib:'
                                               f'{self.rccl_dir}/rccl/build/:'
                                               f'{self.aws_plugin_dir}/aws-ofi-rccl/install/lib:'  # noqa: E501
                                               '/opt/cray/xpmem/2.3.2-2.2_6.13__g93dd7ee.shasta/lib64:'  # noqa: E501
