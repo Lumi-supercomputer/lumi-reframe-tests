@@ -2,6 +2,7 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
+from reframe.utility.osext import cray_cdt_version
 
 
 class fetch_rccl(rfm.RunOnlyRegressionTest):
@@ -23,7 +24,7 @@ class fetch_rccl_tests(rfm.RunOnlyRegressionTest):
     '''Fixture for fetching the rccl-tests.'''
     local = True
     repo_name = 'rccl-tests'
-    executable = f'git clone -b develop git@github.com:ROCmSoftwarePlatform/{repo_name}.git'  # noqa: E501
+    executable = f'git clone -b develop http://github.com/ROCmSoftwarePlatform/{repo_name}.git'  # noqa: E501
     postrun_cmds = [
         f'cd {repo_name};'
         'git checkout 3fbd328'
@@ -38,7 +39,7 @@ class fetch_aws_ofi_rccl_plugin(rfm.RunOnlyRegressionTest):
     '''Fixture for fetching the AWS libfabric plugin.'''
     local = True
     repo_name = 'aws-ofi-rccl'
-    executable = f'git clone -b cxi git@github.com:ROCmSoftwarePlatform/{repo_name}.git'  # noqa: E501
+    executable = f'git clone -b cxi http://github.com/ROCmSoftwarePlatform/{repo_name}.git'  # noqa: E501
     postrun_cmds = [
         f'cd {repo_name};'
         'git checkout 66b3b31'
@@ -133,7 +134,8 @@ class build_aws_plugin(rccl_test_base):
     rccl_tests = fixture(fetch_rccl_tests, scope='session')
     aws_plugin = fixture(fetch_aws_ofi_rccl_plugin, scope='session')
     rccl_binaries = fixture(build_rccl, scope='session')
-    modules = ['singularity-bindings/system-cpeGNU-22.08-noglibc']
+    pe_version = cray_cdt_version()
+    modules = [f'singularity-bindings/system-cpeGNU-{pe_version}-noglibc']
 
     @sanity_function
     def validate_build(self):
