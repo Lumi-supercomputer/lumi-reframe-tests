@@ -107,7 +107,7 @@ class build_rccl_tests(rccl_test_base):
         num_binaries = sn.count(
             sn.glob(f'{build_dir}/*')
         )
-        return sn.assert_eq(num_binaries, 11)
+        return sn.assert_eq(num_binaries, 10)
 
     @run_before('run')
     def set_container_variables(self):
@@ -144,7 +144,7 @@ class build_aws_plugin(rccl_test_base):
             self.aws_plugin.repo_name,
             'install', 'lib'
         )
-        return sn.path_isfile(f'{lib_dir}/install/lib/librccl-net.so.0.0.0')
+        return sn.path_isfile(f'{lib_dir}/librccl-net.so.0.0.0')
 
     @run_before('run')
     def set_container_variables(self):
@@ -173,7 +173,7 @@ class build_aws_plugin(rccl_test_base):
 class rccl_tests_allreduce(rccl_test_base):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
-    modules = [f'singularity-bindings']
+    modules = ['OpenMPI', 'singularity-bindings']
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
@@ -194,6 +194,7 @@ class rccl_tests_allreduce(rccl_test_base):
     def set_variables(self):
         self.variables = {
             'NCCL_DEBUG': 'INFO',
+            'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
             'NCCL_NET_GDR_LEVEL': '3',
             'SINGULARITYENV_LD_LIBRARY_PATH': f'/opt/rocm/lib:'
                                               f'{self.rccl_dir}/rccl/build/:'
