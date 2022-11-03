@@ -138,7 +138,7 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
         #('mpi.collective.osu_alltoall', 'latency'),
         ('mpi.collective.osu_allreduce', 'latency'),
     ], fmt=lambda x: x[0], loggable=True)
-    num_nodes = parameter([1, 2])
+    num_nodes = parameter([1, 2, 4])
     use_multithreading = False
     valid_systems = ['lumi:small', 'lumi:gpu'] 
     valid_prog_environs = ['cpeGNU', 'cpeCray', 'builtin-hip']
@@ -155,18 +155,23 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
                     'latency': (7.25, None, 0.05, 'us')
                 }
             },
+            4: {
+                'lumi:small': {
+                    'latency': (13.5, None, 0.05, 'us')
+                }
+            },
         },
     }
 
     @run_after('init')
     def setup_num_tasks(self):
-        self.num_tasks = self.num_tasks_per_node*self.num_nodes
         build_type = self.osu_binaries.build_type
         if build_type == 'rocm':
             self.num_gpus_per_node = 8
             self.num_tasks_per_node = 8
         else:
             self.num_tasks_per_node = 128
+        self.num_tasks = self.num_tasks_per_node*self.num_nodes
 
         with contextlib.suppress(KeyError):
             self.reference = self.allref[self.num_nodes]
