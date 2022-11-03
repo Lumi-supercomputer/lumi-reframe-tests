@@ -10,7 +10,6 @@ class HipInfo(rfm.RegressionTest):
     build_system = 'SingleSource'
     sourcepath = 'hipInfo.cpp'
     executable = 'hipInfo'
-    build_locally = False
     maintainers = ['mszpindler']
     num_gpus_per_node = 8
 
