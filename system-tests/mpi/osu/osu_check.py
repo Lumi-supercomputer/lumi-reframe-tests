@@ -41,6 +41,19 @@ class lumi_osu_benchmarks(osu_build_run):
     tags = {'production', 'benchmark',}
     maintainers = ['@rsarm', '@mszpindler']
 
+    @run_after('init')
+    def setup_per_build_type(self):
+        build_type = self.osu_binaries.build_type
+        if build_type == 'rocm':
+            self.valid_systems = ['lumi:gpu']
+            self.valid_prog_environs = ['builtin-hip']
+            self.executable_opts = ['-c', '-d', 'rocm', 'D', 'D']
+            self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
+        else:
+            self.valid_systems = ['lumi:small']
+            self.valid_prog_environs = ['cpeGNU', 'cpeCray']
+            self.executable_opts = ['-c']
+
     @run_before('run')
     def add_exec_prefix(self):
         build_type = self.osu_binaries.build_type
@@ -92,19 +105,10 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
     }
 
     @run_after('init')
-    def setup_per_build_type(self):
+    def setup_num_tasks(self):
         build_type = self.osu_binaries.build_type
         if build_type == 'rocm':
-            self.valid_systems = ['lumi:gpu']
-            self.device_buffers = 'rocm'
             self.num_gpus_per_node = 1
-            self.executable_opts = ['-c', '-d', 'rocm', 'D', 'D']
-            self.valid_prog_environs = ['builtin-hip']
-            self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
-        else:
-            self.valid_systems = ['lumi:small']
-            self.valid_prog_environs = ['cpeGNU', 'cpeCray']
-            self.executable_opts = ['-c']
 
         with contextlib.suppress(KeyError):
             self.reference = self.allref[self.benchmark_info[0]][build_type]
@@ -155,25 +159,14 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
     }
 
     @run_after('init')
-    def setup_by_scale(self):
-        with contextlib.suppress(KeyError):
-            self.reference = self.allref[self.num_nodes]
-
-    @run_after('init')
-    def setup_per_build_type(self):
+    def setup_num_tasks(self):
+        self.num_tasks = self.num_tasks_per_node*self.num_nodes
         build_type = self.osu_binaries.build_type
         if build_type == 'rocm':
-            self.valid_systems = ['lumi:gpu']
-            self.device_buffers = 'rocm'
             self.num_gpus_per_node = 8
             self.num_tasks_per_node = 8
-            self.num_tasks = self.num_tasks_per_node*self.num_nodes
-            self.executable_opts = ['-d', 'rocm', 'D', 'D']
-            self.valid_prog_environs = ['builtin-hip']
-            self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
         else:
-            self.valid_systems = ['lumi:small']
-            self.valid_prog_environs = ['cpeGNU', 'cpeCray']
             self.num_tasks_per_node = 128
-            self.num_tasks = self.num_tasks_per_node*self.num_nodes
-            self.executable_opts = ['-c']
+
+        with contextlib.suppress(KeyError):
+            self.reference = self.allref[self.num_nodes]
