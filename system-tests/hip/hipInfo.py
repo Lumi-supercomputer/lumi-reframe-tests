@@ -14,12 +14,6 @@ class HipInfo(rfm.RegressionTest):
     maintainers = ['mszpindler']
     num_gpus_per_node = 8
 
-    @run_before('compile')
-    def set_compiler_flags(self):
-        self.build_system.cc = 'hipcc'
-        self.build_system.cxx = 'hipcc'
-        self.gpu_build = 'hip'
-
     @sanity_function
     def validate_solution(self):
         num_devices = sn.count(sn.findall(r'^device#', self.stdout))
