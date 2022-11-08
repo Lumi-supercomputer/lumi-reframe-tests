@@ -74,7 +74,9 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
     time_limit = '10m'
     benchmark_info = parameter([
         ('mpi.pt2pt.osu_bw', 'bandwidth'),
-        ('mpi.pt2pt.osu_latency', 'latency')
+        ('mpi.pt2pt.osu_mbw_mr', 'bandwidth'),
+        ('mpi.pt2pt.osu_latency', 'latency'),
+        ('mpi.pt2pt.osu_multi_lat', 'latency')
     ], fmt=lambda x: x[0], loggable=True)
     osu_binaries = fixture(lumi_build_osu_benchmarks, scope='environment')
     allref = {
@@ -101,14 +103,26 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
                     'latency': (3.75, None, 0.50, 'us')
                 }
             }
+        },
+        'mpi.pt2pt.osu_multi_lat': {
+            'cpu': {
+                'lumi:small': {
+                    'latency': (1.95, None, 0.80, 'us')
+                }
+            },
         }
     }
 
     @run_after('init')
     def setup_num_tasks(self):
         build_type = self.osu_binaries.build_type
+        bench_name = self.benchmark_info[0]
+        if bench_name == 'mpi.pt2pt.osu_mbw_mr' or bench_name == 'mpi.pt2pt.osu_multi_lat':
+            self.num_tasks_per_node = 8
+        else:
+            self.num_tasks_per_node = 1
         if build_type == 'rocm':
-            self.num_gpus_per_node = 1
+            self.num_gpus_per_node = self.num_tasks_per_node
 
         with contextlib.suppress(KeyError):
             self.reference = self.allref[self.benchmark_info[0]][build_type]
@@ -167,8 +181,8 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
     def setup_num_tasks(self):
         build_type = self.osu_binaries.build_type
         if build_type == 'rocm':
-            self.num_gpus_per_node = 8
             self.num_tasks_per_node = 8
+            self.num_gpus_per_node = self.num_tasks_per_node
         else:
             self.num_tasks_per_node = 128
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
