@@ -44,10 +44,13 @@ class lumi_osu_benchmarks(osu_build_run):
     @run_after('init')
     def setup_per_build_type(self):
         build_type = self.osu_binaries.build_type
+        bench_name = self.benchmark_info[0]
         if build_type == 'rocm':
             self.valid_systems = ['lumi:gpu']
             self.valid_prog_environs = ['builtin-hip']
             self.executable_opts = ['-c', '-d', 'rocm', 'D', 'D']
+            if bench_name == 'mpi.collective.osu_allreduce':
+                self.executable_opts = ['-d', 'rocm', 'D', 'D']
             self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
         else:
             self.valid_systems = ['lumi:small']
@@ -119,6 +122,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
         bench_name = self.benchmark_info[0]
         if bench_name == 'mpi.pt2pt.osu_mbw_mr' or bench_name == 'mpi.pt2pt.osu_multi_lat':
             self.num_tasks_per_node = 8
+            self.num_tasks *= self.num_tasks_per_node
         else:
             self.num_tasks_per_node = 1
         if build_type == 'rocm':
