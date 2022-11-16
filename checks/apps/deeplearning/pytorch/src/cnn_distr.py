@@ -23,7 +23,6 @@ dist.init_process_group(backend="nccl")
 world_size = dist.get_world_size()
 rank = dist.get_rank()
 device = distr_env.local_rank
-device_count = torch.cuda.device_count()
 
 model = getattr(models, model_name)()
 model.to(device)
@@ -86,6 +85,6 @@ for epoch in range(num_epochs):
         print(f' * Rank {rank} - Epoch {epoch:2d}: '
               f'{imgs_sec[epoch]:.2f} images/sec per GPU')
 
-imgs_sec_total = np.mean(imgs_sec) * world_size * device_count
+imgs_sec_total = np.mean(imgs_sec) * world_size
 if rank == 0:
     print(f' * Total average: {imgs_sec_total:.2f} images/sec')
