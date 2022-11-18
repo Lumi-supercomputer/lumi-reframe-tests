@@ -4,10 +4,20 @@ import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
 
 
-class deepspeed_bert_fetch_data_tokenizer(rfm.RunOnlyRegressionTest):
+def set_container_platform(test):
+    test.container_platform = 'Singularity'
+    test.container_platform.image = os.path.join(
+        test.current_system.resourcesdir,
+        'deepspeed',
+        'deepspeed_rocm5.2.3_ubuntu20.04_py3.7_pytorch_1.12.1_deepspeed.sif'
+    )
+
+
+class bert_fetch_data_tokenizer(rfm.RunOnlyRegressionTest):
     '''Fixture for fetching the the dataset and tokenizer'''
     local = True
     modules = ['DeepSpeed']
+    variables = {'HF_HOME': './huggingface_home'}
     executable = 'python bert_squad_deepspeed_train.py --download-only'
 
     @sanity_function
@@ -15,12 +25,20 @@ class deepspeed_bert_fetch_data_tokenizer(rfm.RunOnlyRegressionTest):
         return sn.assert_eq(self.job.exitcode, 0)
 
 
+class bert_fetch_data_tokenizer_singularity(bert_fetch_data_tokenizer):
+    modules = []
+
+    @run_before('run')
+    def set_container_variables(self):
+        set_container_platform(self)
+        self.container_platform.command = self.executable
+
+
 class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
     descr = ('Check the training throughput of a BERT with Squad for the QA '
              'task with DeepSpeed')
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
-    bert_cache = fixture(deepspeed_bert_fetch_data_tokenizer, scope='session')
     sourcesdir = 'src'
     executable = 'python bert_squad_deepspeed_train.py'
     executable_opts = ['--deepspeed_config ds_config.json',
@@ -52,8 +70,10 @@ class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
 
     @performance_function('samples/sec')
     def samples_per_sec(self):
-        return sn.avg(sn.extractall(r'SamplesPerSec=(?P<samples_per_sec>\S+),',
-                                    self.stdout, 'samples_per_sec', float))
+        return sn.avg(sn.extractall(
+            r'RunningAvgSamplesPerSec=(?P<samples_per_sec>\S+),',
+            self.stdout, 'samples_per_sec', float
+        ))
 
 
 @rfm.simple_test
@@ -61,11 +81,16 @@ class deepspeed_bert_qa_train(deepspeed_bert_qa_train_base):
     # Besides `deepspeed`, the packages`transformers`, `datasets` and `rich`
     # are needed to run this test
     modules = ['DeepSpeed']
+    bert_cache = fixture(bert_fetch_data_tokenizer, scope='session')
 
     @run_before('run')
     def prepare_job(self):
         bert_cache_dir = os.path.join(self.bert_cache.stagedir, 'cache')
         self.executable_opts.append(f'--bert-cache-dir {bert_cache_dir}')
+        self.variables.update({
+            'HF_HOME': os.path.join(self.bert_cache.stagedir,
+                                    'huggingface_home')
+        })
 
 
 @rfm.simple_test
@@ -74,17 +99,14 @@ class deepspeed_bert_qa_train_singularity(deepspeed_bert_qa_train_base):
     # The container used here doesn't include all the packages needed to run
     # this test:
     # MPICC=mpicc pip install --user mpi4py
-    # pip install --user datasets transformers tokenizers
+    # pip install --user datasets transformers tokenizers rich
     modules = ['OpenMPI']
+    bert_cache = fixture(bert_fetch_data_tokenizer_singularity,
+                         scope='session')
 
     @run_before('run')
     def set_container_variables(self):
-        self.container_platform = 'Singularity'
-        self.container_platform.image = os.path.join(
-            self.current_system.resourcesdir,
-            'deepspeed',
-            'deepspeed_rocm5.2.3_ubuntu20.04_py3.7_pytorch_1.12.1_deepspeed.sif'  # noqa E501
-        )
+        set_container_platform(self)
         # FIXME: copy of `comm.py` that uses `hostname -i`
         # instead of `hostname -I`
         comm_py = os.path.join(
@@ -97,9 +119,10 @@ class deepspeed_bert_qa_train_singularity(deepspeed_bert_qa_train_base):
             'deepspeed', 'quantizer_hip.h'
         )
         deepspeed_dir = '/opt/conda/lib/python3.7/site-packages/deepspeed'
+        bert_cache_dir = '/bert_cache_dir'
         self.container_platform.mount_points = [
             ('$SCRATCH', '$SCRATCH'),
-            (self.bert_cache.stagedir, '/bert_cache_dir'),
+            (self.bert_cache.stagedir, bert_cache_dir),
             # FIXME: Mounting missing deepspeed files or files needing changes
             (comm_py, os.path.join(deepspeed_dir, 'comm/comm.py')),
             (quantizer_hip, os.path.join(deepspeed_dir, 'ops/csrc/includes/quantizer_hip.h'))  # noqa E501
@@ -109,6 +132,9 @@ class deepspeed_bert_qa_train_singularity(deepspeed_bert_qa_train_base):
             *self.executable_opts,
             '--bert-cache-dir /bert_cache_dir/cache'
         ])
+        self.variables.update({
+            'HF_HOME': os.path.join(bert_cache_dir, 'huggingface_home')
+        })
 
     @run_before('run')
     def set_launcher(self):
