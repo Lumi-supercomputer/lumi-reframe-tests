@@ -80,26 +80,27 @@ class pytorch_distr_cnn_singularity(pytorch_distr_cnn_base):
         self.container_platform.image = os.path.join(
             self.current_system.resourcesdir,
             'deepspeed',
-            'deepspeed_rocm5.0.1_ubuntu18.04_py3.7_pytorch_1.10.0.sif'
+            'deepspeed_rocm5.2.3_ubuntu20.04_py3.7_pytorch_1.12.1_deepspeed.sif'  # noqa: E501
         )
         self.container_platform.command = 'python cnn_distr.py'
 
 
 @rfm.simple_test
 class pytorch_distr_cnn_singularity_aws(pytorch_distr_cnn_singularity):
-    modules = ['singularity-bindings', 'rccl', 'aws-ofi-rccl']
+    modules = ['singularity-bindings', 'aws-ofi-rccl']
 
     @run_before('run')
     def set_container_variables(self):
         super().set_container_variables()
         self.container_platform.mount_points = [
             ('/appl', '/appl'),
+            ('$SCRATCH', '$SCRATCH'),
             ('$EBROOTRCCL/lib/librccl.so.1.0',
              '/opt/rocm-5.0.1/rccl/lib/librccl.so.1.0.50001')
         ]
         self.variables.update({
             'SINGULARITYENV_LD_LIBRARY_PATH': (
-                '/opt/ompi/lib:/opt/rocm-5.0.1/lib:'
+                '/opt/ompi/lib:'
                 '${EBROOTAWSMINOFIMINRCCL}/lib:'
                 '/opt/cray/xpmem/2.4.4-2.3_9.1__gff0e1d9.shasta/lib64:'
                 '${SINGULARITYENV_LD_LIBRARY_PATH}'
