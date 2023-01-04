@@ -145,7 +145,7 @@ site_configuration = {
                     ],
                     'max_jobs': 10,
                     'modules': ['LUMI', 'partition/G'],
-                    'access': ['--partition gpu',
+                    'access': ['--partition small-g',
                                f'--account={project}'],
                     'resources': [
                         {
