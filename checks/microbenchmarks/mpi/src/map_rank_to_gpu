@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# NUMA-spread order
+GPUSID="4 2 6 0 5 3 7 1"
+#GPUSID="4 5 2 3 6 7 0 1"
+
+GPUSID=(${GPUSID})
+if [ ${#GPUSID[@]} -gt 0 ]; then
+export LOCAL_DEVICE=${GPUSID[$((SLURM_LOCALID / ($SLURM_NTASKS_PER_NODE / ${#GPUSID[@]})))]}
+fi
+
+export LOCAL_RANK=$LOCAL_DEVICE
+
+CPU=`taskset -pc $$ | cut -d: -f2`
+echo `hostname` lrank: $SLURM_LOCALID gpus: $LOCAL_RANK cpus: $CPU rocm: $ROCR_VISIBLE_DEVICES
+
+exec $*
