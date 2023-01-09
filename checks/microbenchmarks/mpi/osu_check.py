@@ -49,14 +49,9 @@ class lumi_osu_benchmarks(osu_build_run):
             self.valid_systems = ['lumi:gpu']
             self.valid_prog_environs = ['builtin-hip']
             self.executable_opts = ['-c', '-d', 'rocm', 'D', 'D']
-            self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
             if bench_name == 'mpi.collective.osu_allreduce':
                 self.executable_opts = ['-d', 'rocm', 'D', 'D']
-            if bench_name == 'mpi.pt2pt.osu_mbw_mr':
-		# Binding for numa-spread mapping
-            	self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1', 'MPICH_GPU_IPC_ENABLED': '1', 'SLURM_CPU_BIND': 'map_cpu:1,17,33,49,14,30,46,62'}
-		# Binding for numa-close mapping
-            	#self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1', 'MPICH_GPU_IPC_ENABLED': '1', 'SLURM_CPU_BIND': 'map_cpu:1,14,17,30,33,46,49,62'}
+            self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
         else:
             self.valid_systems = ['lumi:small']
             self.valid_prog_environs = ['cpeGNU', 'cpeCray']
@@ -88,13 +83,6 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
     ], fmt=lambda x: x[0], loggable=True)
     osu_binaries = fixture(lumi_build_osu_benchmarks, scope='environment')
     allref = {
-        'mpi.pt2pt.osu_mbw_mr' : {
-	    'rocm': {
-                'lumi:gpu': {
-                    'bandwidth': (200000.0, -0.10, None, 'MB/s')
-                }
-            }
-        },
         'mpi.pt2pt.osu_bw': {
             'cpu': {
                 'lumi:small': {
@@ -132,11 +120,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
     def setup_num_tasks(self):
         build_type = self.osu_binaries.build_type
         bench_name = self.benchmark_info[0]
-        if bench_name == 'mpi.pt2pt.osu_mbw_mr':
-            self.num_tasks_per_node = 8
-            self.num_tasks = 8
-            self.exclusive_access = True
-        elif bench_name == 'mpi.pt2pt.osu_multi_lat':
+        if bench_name == 'mpi.pt2pt.osu_mbw_mr' or bench_name == 'mpi.pt2pt.osu_multi_lat':
             self.num_tasks_per_node = 8
             self.num_tasks *= self.num_tasks_per_node
         else:
@@ -157,11 +141,8 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
                                        'c',
                                        bench_path)
         if build_type == 'rocm':
-            if self.num_gpus_per_node > 1:
-            	# update map_rank_to_gpu wrapper
-            	#self.executable = os.path.join(self.osu_binaries.stagedir, self.osu_binaries.build_prefix,
-            	#                               'map_rank_to_gpu ') + self.executable
-            	self.executable = './map_rank_to_gpu ' + self.executable
+            self.executable = os.path.join(self.osu_binaries.stagedir, self.osu_binaries.build_prefix,
+                                           'map_rank_to_gpu ') + self.executable
 
     @sanity_function
     def validate_test(self):
