@@ -11,6 +11,7 @@ class comm_scope(rfm.RegressionTest):
     modules = ['buildtools']
     build_system = 'CMake'
     executable = './build/comm_scope'
+    executable_opts = ['--benchmark_filter="hipMemcpyAsync.*Pageable"']
     maintainers = ['mszpindler']
     num_gpus_per_node = 8
     num_cpus_per_task = 8
