@@ -11,10 +11,14 @@ class comm_scope(rfm.RegressionTest):
     modules = ['buildtools']
     build_system = 'CMake'
     executable = './build/comm_scope'
-    executable_opts = ['--benchmark_filter="hipMemcpyAsync.*Pageable"']
+    executable_opts = ['--benchmark_filter="Comm_.*GPUToGPU.*/0/([1-7])/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
     maintainers = ['mszpindler']
     num_gpus_per_node = 8
     num_cpus_per_task = 8
+
+    @run_after('setup')
+    def setup_compile(self):
+        self.build_job.num_cpus_per_task = 64
 
     @run_before('compile')
     def do_cmake(self):
@@ -22,3 +26,11 @@ class comm_scope(rfm.RegressionTest):
         self.build_system.config_opts = ['-DSCOPE_ARCH_MI250X=ON', '-DSCOPE_USE_NUMA=ON']
         self.build_system.builddir = 'build'
         self.build_system.max_concurrency = 64
+
+    @sanity_function
+    def validate_benchmarks(self):
+        return sn.assert_eq(sn.count( sn.findall('dst_gpu', 'rfm_job.json') ), self.num_gpus_per_node-1)
+
+    @performance_function('B/s')
+    def bytes_per_second(self):
+        return sn.extractsingle(r'\s+.*"bytes_per_second"\:\s+(?P<bps>\S+),', 'rfm_job.json', 'bps', float)
