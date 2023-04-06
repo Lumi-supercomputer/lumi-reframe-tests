@@ -11,7 +11,7 @@ class comm_scope(rfm.RegressionTest):
     modules = ['buildtools']
     build_system = 'CMake'
     executable = './build/comm_scope'
-    executable_opts = ['--benchmark_filter="Comm_.*GPUToGPU.*/0/([1-7])/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
+    executable_opts = ['--benchmark_filter="Comm_implicit_managed_GPUWrGPU.*/0/([1,2,6])/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
     maintainers = ['mszpindler']
     num_gpus_per_node = 8
     num_cpus_per_task = 8
