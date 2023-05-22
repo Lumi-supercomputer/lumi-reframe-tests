@@ -8,7 +8,7 @@ class abinit_check(rfm.RunOnlyRegressionTest):
     maintainers = ['mszpindler']
     prerun_cmds = ['sed -i -e "/nstep/s/2/20/" t01.abi']
     executable_opts = ['t01.abi']
-    self.variables = {
+    variables = {
         'ABI_PSPDIR': '.',
     }
 
