@@ -7,7 +7,7 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import SanityError
 
 
-class AffinityTestBase(rfm.RunOnlyRegressionTest):
+class AffinityTaskBase(rfm.RunOnlyRegressionTest):
     '''Base class for the affinity checks.'''
 
     # Variables to control the hint and binding options on the launcher.
@@ -17,37 +17,7 @@ class AffinityTestBase(rfm.RunOnlyRegressionTest):
     maintainers = ['mszpindler']
     tags = {'production'}
 
-
-class AffinityOpenMPBase(AffinityTestBase):
-    '''Extend affinity base with OMP hooks.
-
-    The tests derived from this class book the full node and place the
-    threads acordingly based exclusively on the OMP_BIND env var. The
-    number of total OMP_THREADS will vary depending on what are we
-    binding the OMP threads to (e.g. if we bind to sockets, we'll have as
-    many threads as sockets).
-    '''
-
-    omp_bind = variable(str)
-    omp_proc_bind = variable(str, value='close')
-    num_tasks = 1
-
-    @run_before('run')
-    def set_num_cpus_per_task(self):
-        self.job.launcher.options = ['--cpus-per-task=$SLURM_CPUS_ON_NODE']
-
-    @run_before('run')
-    def set_omp_vars(self):
-        self.variables = {
-            'OMP_PLACES': self.omp_bind,
-            'OMP_PROC_BIND': self.omp_proc_bind,
-        }
-
-@rfm.simple_test
-class HybridCheck(AffinityOpenMPBase):
-
     exclusive_access= True
-    omp_bind = 'cores'
     modules = ['lumi-CPEtools']
 
     @run_after('init')
@@ -55,23 +25,55 @@ class HybridCheck(AffinityOpenMPBase):
         self.executable = 'hybrid_check'
         self.executable_opts = ['-r']
 
-    @run_after('init')
-    def set_threading(self):
+    @run_before('run')
+    def set_omp_vars(self):
+        self.variables = {
+            'OMP_PROC_BIND': 'close'
+        }
         if self.multithread:
             self.use_multithreading = True
             self.variables['OMP_PLACES'] = 'threads' 
         else:
             self.use_multithreading = False
             self.variables['OMP_PLACES'] = 'cores' 
- 
+
+@rfm.simple_test
+class SingleTask(AffinityTaskBase):
+
+    num_tasks = 1
 
     @run_before('run')
-    def set_omp_vars(self):
-        self.variables['OMP_PROC_BIND'] = 'close'
-            #'OMP_PLACES': 'cores',
-            #'OMP_PROC_BIND': 'close',
+    def set_num_cpus_per_task(self):
+        self.job.launcher.options = ['--cpus-per-task=$SLURM_CPUS_ON_NODE']
 
+ 
     @sanity_function
     def check_thread_pin(self):
         nthreads = sn.extractsingle(r'Running\s+(\S+)\s+threads\s+.*',self.stdout, 1, int)  
         return sn.assert_eq(nthreads, sn.count(sn.findall(r'hybrid_check', self.stdout)))
+
+@rfm.simple_test
+class TaskPerGPU(AffinityTaskBase):
+
+    num_gpus = 8
+    num_gpus_per_node = num_gpus 
+    num_tasks = num_gpus
+    num_threads = num_tasks - 1
+
+    @run_before('run')
+    def set_num_cpus_per_task(self):
+        self.job.launcher.options = [f'--cpus-per-task={self.num_threads}']
+
+    @sanity_function
+    def check_thread_pin(self):
+        nranks = sn.extractsingle(r'Running\s+(\S+)\s+MPI\s+ranks\s+.*',self.stdout, 1, int)  
+        nthreads = sn.extractsingle(r'Running\s+\S+\s+MPI\s+ranks\s+with\s+(\S+)\s+.*',self.stdout, 1, int)
+        return sn.assert_eq(nranks, self.num_tasks) 
+
+@rfm.simple_test
+class TaskPerGPU_CPUMap(TaskPerGPU):
+
+    @run_before('run')
+    def set_cpu_mask(self):
+        cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
+        self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
