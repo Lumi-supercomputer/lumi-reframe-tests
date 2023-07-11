@@ -19,6 +19,7 @@ class HeterogeneousJob(rfm.RunOnlyRegressionTest):
 
     exclusive_access= False
     time_limit = 180
+    num_tasks = None
     omp_bind = 'cores'
     omp_proc_bind = 'close'
 
@@ -27,7 +28,7 @@ class HeterogeneousJob(rfm.RunOnlyRegressionTest):
         self.job.options = ['--cpus-per-task=2 --ntasks-per-node=8'] 
         self.job.options += ['hetjob']
         self.job.options += ['--cpus-per-task=8 --ntasks-per-node=2']
-        self.job.options += ['--partition ' + self.current_partition.name]
+        self.job.options += self.current_partition.access
 
     @run_before('run')
     def set_omp_vars(self):
