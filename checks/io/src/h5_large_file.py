@@ -16,12 +16,11 @@ def write_h5():
 
     with h5py.File('large.hdf5', 'w-', driver='sec2') as hf:
 
-        for n in range(num_dsets):
+        dset = hf.create_dataset('dataset', num_dsets*(num_chunks, chunk_size), dtype='f8', chunks= (1, chunk_size))
 
-            dset = hf.create_dataset('dset_'+str(n), (num_chunks, chunk_size), dtype='f8', chunks= (1, chunk_size))
-
-            for i in range(num_chunks):
-                dset[i,:] = buf
+        for i in range(num_dsets*num_chunks):
+            dset[i,:] = buf
+            
     hf.close()
 
 write_time = timeit.timeit(write_h5, setup=setup, number=1)
