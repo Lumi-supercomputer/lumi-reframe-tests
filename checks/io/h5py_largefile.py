@@ -3,9 +3,9 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class h5_LargeFile(rfm.RunOnlyRegressionTest):
-    valid_systems = ['lumi-small']
-    valid_prog_environs = ['builtin']
-    modules = ['cray-python']  # check if contains h5py
+    valid_systems = ['lumi:gpu', 'lumi:login']
+    valid_prog_environs = ['cpeGNU']
+    modules = ['cray-python', 'h5py']  
     executable = 'python'
     executable_opts = ['h5_large_file.py']
     num_tasks = 1
