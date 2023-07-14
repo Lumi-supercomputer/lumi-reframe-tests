@@ -11,7 +11,7 @@ from reframe.core.exceptions import SanityError
 class HeterogeneousJob(rfm.RunOnlyRegressionTest):
 
     # Variables to control the hint and binding options on the launcher.
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
     maintainers = ['mszpindler']
     modules = ['lumi-CPEtools']
@@ -19,7 +19,6 @@ class HeterogeneousJob(rfm.RunOnlyRegressionTest):
 
     exclusive_access= False
     time_limit = 180
-    num_tasks = None
     omp_bind = 'cores'
     omp_proc_bind = 'close'
 
