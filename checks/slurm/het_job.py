@@ -17,17 +17,23 @@ class HeterogeneousJob(rfm.RunOnlyRegressionTest):
     modules = ['lumi-CPEtools']
     tags = {'production'}
 
-    exclusive_access= False
+    exclusive_access= True
     time_limit = 180
     omp_bind = 'cores'
     omp_proc_bind = 'close'
 
+    ntasks = [8,2]
+    nthreads = [4,16]
+
     @run_before('run')
     def set_het_groups(self):
-        self.job.options = ['--cpus-per-task=2 --ntasks-per-node=8'] 
+        self.job.options = [f'--ntasks={self.ntasks[0]}'] 
+        self.job.options += [f'--cpus-per-task={self.nthreads[0]}']
         self.job.options += ['hetjob']
-        self.job.options += ['--cpus-per-task=8 --ntasks-per-node=2']
+        self.job.options += [f'--ntasks={self.ntasks[1]}']
+        self.job.options += [f'--cpus-per-task={self.nthreads[1]}']
         self.job.options += self.current_partition.access
+        self.job.launcher.options = [f'--het-group=0 --cpus-per-task={self.nthreads[0]} {self.executable} : --het-group=1 --cpus-per-task={self.nthreads[1]}']
 
     @run_before('run')
     def set_omp_vars(self):
@@ -41,11 +47,14 @@ class HeterogeneousJob(rfm.RunOnlyRegressionTest):
         self.executable = 'hybrid_check'
         #self.executable_opts = ['-r']
 
-    @run_before('run')
-    def set_het_launch_opts(self):
-        self.job.launcher.options = ['--het-group=0,1']
-
     @sanity_function
     def check_het_groups(self):
-        ngroups = sn.extractall(r'Running\s+(\S+)\s+threads\s+.*',self.stdout, 1, int)  
-        return sn.assert_eq(sn.count(ngroups), 2)
+        nranks = sn.extractsingle(r'Running\s+(\S+)\s+MPI\s+ranks\s+with\s+between\s+\S+\s+and\s+\S+\s+threads\s+.*',self.stdout, 1, int)
+        #Running 10 MPI ranks with between 4 and 16 threads each
+        t0 = sn.extractsingle(r'Running\s+\S+\s+MPI\s+ranks\s+with\s+between\s+(\S+)+\s+and\s+\S+\s+threads\s+.*',self.stdout, 1, int)
+        t1 = sn.extractsingle(r'Running\s+\S+\s+MPI\s+ranks\s+with\s+between\s+\S+\s+and\s+(\S+)+\s+threads\s+.*',self.stdout, 1, int)
+        return sn.all([
+            sn.assert_eq(nranks, self.ntasks[0]+self.ntasks[1]),
+            sn.assert_eq(t0, self.nthreads[0]), 
+            sn.assert_eq(t1, self.nthreads[1])
+        ])
