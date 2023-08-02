@@ -145,7 +145,7 @@ site_configuration = {
                     ],
                     'max_jobs': 10,
                     'modules': ['LUMI', 'partition/G'],
-                    'access': ['--partition bardpeak',
+                    'access': ['--partition small-g',
                                f'--account={project}'],
                     'resources': [
                         {
@@ -239,7 +239,7 @@ site_configuration = {
             'cflags': ['-I$MPICH_DIR/include'],
             'ldflags': ['-L$MPICH_DIR/lib', '-lmpi', '-L$CRAY_MPICH_ROOTDIR/gtl/lib/', '-lmpi_gtl_hsa'],
             'cppflags': ['-D__HIP_PLATFORM_AMD__'],
-            'modules': ['PrgEnv-amd', 'rocm', 'craype-accel-amd-gfx90a'],
+            'modules': ['rocm', 'craype-accel-amd-gfx90a'],
             'target_systems': ['lumi:gpu', 'lumi:eap']
         }
     ],
