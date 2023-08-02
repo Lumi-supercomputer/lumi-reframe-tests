@@ -8,10 +8,10 @@ class comm_scope(rfm.RegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin-hip']
     sourcesdir = 'https://github.com/c3sr/comm_scope'
-    modules = ['buildtools']
+    modules = ['buildtools', 'gcc/12.2.0']
     build_system = 'CMake'
     executable = './build/comm_scope'
-    executable_opts = ['--benchmark_filter="Comm_implicit_managed_GPUWrGPU.*/0/([1,2,6])/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
+    executable_opts = ['--benchmark_filter="Comm_implicit_managed_GPUWrGPU_fine/0/([1-7])/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
     maintainers = ['mszpindler']
     num_gpus_per_node = 8
     num_cpus_per_task = 8
@@ -19,6 +19,12 @@ class comm_scope(rfm.RegressionTest):
     @run_after('setup')
     def setup_compile(self):
         self.build_job.num_cpus_per_task = 64
+
+    @run_before('run')
+    def set_env_vars(self):
+        self.variables = {
+            'LD_LIBRARY_PATH': '$LD_LIBRARY_PATH:/opt/rocm/llvm/lib/',
+        }
 
     @run_before('compile')
     def do_cmake(self):
