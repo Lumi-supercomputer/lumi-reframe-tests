@@ -82,6 +82,8 @@ class HybridTask_Check(AffinityTaskBase):
     def check_thread_pin(self):
         for rank in range(self.num_tasks):
            thread_mask = sn.extractall(rf'MPI rank\s+{rank}\/\S+\s+OpenMP thread\s+\S+\/\S+\s+on cpu\s+\S+\/\S+\s+of\s+\S+\s+mask\s+(?P<mask>\S+)', self.stdout, 'mask', int)
+           if self.multithread:
+              thread_mask = [t % 64 for t in thread_mask]
            thread_dom = [mask // self.dom_size for mask in thread_mask]
            if not(len(thread_dom) == self.num_threads and thread_dom.count(thread_dom[0]) == len(thread_dom)):
                return False
@@ -97,6 +99,7 @@ class GPUPerTask_Check(AffinityTaskBase):
     num_gpus = 8
     num_gpus_per_node = num_gpus 
     num_tasks = num_gpus
+    valid_systems = ['lumi:gpu']
 
     @run_after('init')
     def set_executable(self):
@@ -109,7 +112,7 @@ class GPUPerTask_Check(AffinityTaskBase):
 
     @run_before('run')
     def set_cpu_map(self):
-        self.job.launcher.options = ['--cpu-bind="map_cpu:48,56,16,24,1,8,32,40"']
+        self.job.launcher.options = ['--cpu-bind="map_cpu:1,9,17,25,33,41,49,57"']
 
     @sanity_function
     def check_cpu_gpu_numa_bind(self):
@@ -129,6 +132,7 @@ class Hybrid_GPUSelect_Check(AffinityTaskBase):
     num_gpus_per_node = num_gpus 
     num_tasks = num_gpus
     num_threads = num_tasks - 1
+    valid_systems = ['lumi:gpu']
 
     @run_after('init')
     def set_executable(self):
@@ -162,6 +166,7 @@ class Hybrid_GPUBind_Check(AffinityTaskBase):
     num_gpus_per_node = num_gpus 
     num_tasks = num_gpus
     num_threads = num_tasks - 1
+    valid_systems = ['lumi:gpu']
 
     @run_after('init')
     def set_executable(self):
@@ -172,7 +177,7 @@ class Hybrid_GPUBind_Check(AffinityTaskBase):
     def set_cpu_gpu_bind(self):
         cpu_bind_mask = '0xfe,0xfe00,0xfe0000,0xfe000000,0xfe00000000,0xfe0000000000,0xfe000000000000,0xfe00000000000000'
         self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
-        self.job.launcher.options += ['--gpu-bind=map_gpu:4,5,2,3,6,7,0,1']
+        self.job.launcher.options += ['--gpu-bind=map_gpu:0,1,2,3,4,5,6,7']
 
     @sanity_function
     def check_cpu_gpu_numa_bind(self):
