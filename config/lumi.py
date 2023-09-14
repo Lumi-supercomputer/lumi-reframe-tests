@@ -142,6 +142,7 @@ site_configuration = {
                         'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
+                        'cpeGNU',
                     ],
                     'max_jobs': 10,
                     'modules': ['LUMI', 'partition/G'],
