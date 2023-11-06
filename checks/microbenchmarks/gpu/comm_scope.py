@@ -7,8 +7,8 @@ import reframe.utility.sanity as sn
 class comm_scope(rfm.RegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin-hip']
-    sourcesdir = 'https://github.com/c3sr/comm_scope'
-    modules = ['buildtools', 'gcc/12.2.0']
+    sourcesdir = 'https://github.com/c3sr/comm_scope -b v0.12.0'
+    modules = ['buildtools']
     build_system = 'CMake'
     executable = './build/comm_scope'
     executable_opts = ['--benchmark_filter="Comm_implicit_managed_GPUWrGPU_fine/0/([1-7])/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
@@ -29,9 +29,9 @@ class comm_scope(rfm.RegressionTest):
     @run_before('compile')
     def do_cmake(self):
         self.prebuild_cmds = ['git submodule update --init --recursive']
-        self.build_system.config_opts = ['-DSCOPE_ARCH_MI250X=ON', '-DSCOPE_USE_NUMA=ON']
+        self.build_system.config_opts = ['--fresh', '-DCMAKE_CXX_COMPILER=hipcc', '-DSCOPE_ARCH_MI250X=ON', '-DSCOPE_USE_NUMA=ON']
         self.build_system.builddir = 'build'
-        self.build_system.max_concurrency = 64
+        self.build_system.max_concurrency = 8
 
     @sanity_function
     def validate_benchmarks(self):
