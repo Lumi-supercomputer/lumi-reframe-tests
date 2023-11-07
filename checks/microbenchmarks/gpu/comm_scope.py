@@ -1,4 +1,4 @@
-# https://github.com/c3sr/comm_scope
+# This check uses code from https://github.com/c3sr/comm_scope
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -19,9 +19,9 @@ class comm_scope(rfm.RegressionTest):
     # Reference numbers are taken from C. Pearson "Interconnect Bandwidth Heterogeneity on AMD MI250x and Infinity Fabric" (https://arxiv.org/pdf/2302.14827.pdf)
     reference = {
         'lumi:gpu': {
-            'quad':   (148, -0.1, 0.1, 'GB/s'),
-            'dual':   (76, -0.1, 0.1, 'GB/s'),
-            'single': (38, -0.1, 0.1, 'GB/s'),
+            'quad':   (148, -0.05, 0.05, 'GB/s'),
+            'dual':   (76, -0.05, 0.05, 'GB/s'),
+            'single': (38, -0.05, 0.05, 'GB/s'),
         }
     }
 
@@ -43,14 +43,22 @@ class comm_scope(rfm.RegressionTest):
         self.build_system.builddir = 'build'
         self.build_system.max_concurrency = 8
 
+    @run_before('performance')
+    def set_perf_variables(self):
+
+        self.perf_variables = {
+            'quad': self.bytes_per_second(),
+            'dual': self.bytes_per_second(6),
+            'single': self.bytes_per_second(2),
+        }
+
     @sanity_function
     def validate_benchmarks(self):
         return sn.assert_eq(sn.count( sn.findall('dst_gpu', 'rfm_job.json') ), self.num_gpus_per_node-1)
 
-    @performance_function('B/s')
-    def bytes_per_second(self, kind='quad'):
+    @performance_function('GB/s')
+    def bytes_per_second(self, dst_gpu=1):
+        bps = sn.extractsingle(rf'Comm_implicit_managed_GPUWrGPU_fine\S+.*bytes_per_second=(\S+)G\/s\s+dst_gpu={dst_gpu}\s+src_gpu=0', self.stdout, 1, float)
+        # The benchmark formats bps on standard output in GiB not GB
+        return bps*(1024**3)*1e-9
 
-        if kind not in ('quad', 'dual', 'single'):
-            raise ValueError(f'illegal value in argument kind ({kind!r})')
-
-        return sn.extractsingle(r'\s+.*"bytes_per_second"\:\s+(?P<bps>\S+),', 'rfm_job.json', 'bps', float)
