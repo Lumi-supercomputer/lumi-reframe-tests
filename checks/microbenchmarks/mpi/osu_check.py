@@ -47,7 +47,7 @@ class lumi_osu_benchmarks(osu_build_run):
         bench_name = self.benchmark_info[0]
         if build_type == 'rocm':
             self.valid_systems = ['lumi:gpu']
-            self.valid_prog_environs = ['builtin-hip']
+            self.valid_prog_environs = ['PrgEnv-amd']
             self.executable_opts = ['-c', '-d', 'rocm', 'D', 'D']
             self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
             if bench_name == 'mpi.collective.osu_allreduce':
@@ -59,7 +59,7 @@ class lumi_osu_benchmarks(osu_build_run):
             	#self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1', 'MPICH_GPU_IPC_ENABLED': '1', 'SLURM_CPU_BIND': 'map_cpu:1,14,17,30,33,46,49,62'}
         else:
             self.valid_systems = ['lumi:small']
-            self.valid_prog_environs = ['cpeGNU', 'cpeCray']
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
             self.executable_opts = ['-c']
 
     @run_before('run')
