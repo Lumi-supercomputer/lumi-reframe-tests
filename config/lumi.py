@@ -139,9 +139,9 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'builtin-hip',
-                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
+                        'PrgEnv-amd',
                     ],
                     'max_jobs': 10,
                     'modules': ['LUMI', 'partition/G'],
@@ -193,8 +193,9 @@ site_configuration = {
             'modules': ['PrgEnv-gnu']
         },
          {
-             'name': 'PrgEnv-intel',
-             'modules': ['PrgEnv-intel']
+             'name': 'PrgEnv-amd',
+             'target_systems': ['lumi'],
+             'modules': ['PrgEnv-amd']
          },
         {
             'name': 'cpeAOCC',
