@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # NUMA-spread pair order
-GPUSID="4 2 6 0 5 3 7 1"
+#GPUSID="4 2 6 0 5 3 7 1"
 # NUMA-close
-#GPUSID="4 5 2 3 6 7 0 1"
+GPUSID="4 5 2 3 6 7 0 1"
 
 GPUSID=(${GPUSID})
 if [ ${#GPUSID[@]} -gt 0 ]; then
