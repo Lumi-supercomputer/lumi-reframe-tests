@@ -9,7 +9,7 @@ from hpctestlib.microbenchmarks.mpi.osu import (build_osu_benchmarks,
 class lumi_fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
    # This test implies version 6.0 or later due to code structure change
    # introduced in the version 6.0 of OSU microbenchmarks
-   version = variable(str, value='6.0')
+   version = '7.3'
    local = True
 
    @run_before('run')
@@ -24,7 +24,7 @@ class lumi_fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
 
 class lumi_build_osu_benchmarks(build_osu_benchmarks):
     build_type = parameter(['cpu', 'rocm'])
-    osu_benchmarks = fixture(lumi_fetch_osu_benchmarks, scope='session', variables={'version': '6.1'})
+    osu_benchmarks = fixture(lumi_fetch_osu_benchmarks, scope='session', variables={'version': '7.3'})
 
     @run_after('init')
     def setup_modules(self):
@@ -38,111 +38,121 @@ class lumi_build_osu_benchmarks(build_osu_benchmarks):
         self.build_system.cflags = ['-Wno-return-type', '-I$MPICH_DIR/include']
 
 class lumi_osu_benchmarks(osu_build_run):
+    use_multithreading = False
+    exclusive_access = True
+    time_limit = '10m'
     tags = {'production', 'benchmark',}
     maintainers = ['@rsarm', '@mszpindler']
 
     @run_after('init')
     def setup_per_build_type(self):
         build_type = self.osu_binaries.build_type
-        bench_name = self.benchmark_info[0]
         if build_type == 'rocm':
+            self.device_buffers = 'rocm'
             self.valid_systems = ['lumi:gpu']
-            self.valid_prog_environs = ['builtin-hip']
-            self.executable_opts = ['-c', '-d', 'rocm', 'D', 'D']
-            if bench_name == 'mpi.collective.osu_allreduce':
-                self.executable_opts = ['-d', 'rocm', 'D', 'D']
-            self.variables = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
+            self.valid_prog_environs = ['PrgEnv-amd']
+            self.env_vars = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
         else:
-            self.valid_systems = ['lumi:small']
-            self.valid_prog_environs = ['cpeGNU', 'cpeCray']
-            self.executable_opts = ['-c']
+            self.valid_systems = ['lumi:standard']
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
 
     @run_before('run')
     def add_exec_prefix(self):
-        build_type = self.osu_binaries.build_type
-        bench_path = self.benchmark_info[0].replace('.', '/')
+        bench_path = self.benchmark_info[0].replace('.', '/') 
         # update directory structure
         self.executable = os.path.join(self.osu_binaries.stagedir,
                                        self.osu_binaries.build_prefix,
-                                       'c',
+                                       'c', 
                                        bench_path)
+
+    @run_before('run')
+    def setup_gpu_jobs(self):
+        build_type = self.osu_binaries.build_type
         if build_type == 'rocm':
-            self.executable = os.path.join(self.osu_binaries.stagedir, self.osu_binaries.build_prefix,
-                                           'map_rank_to_gpu ') + self.executable
+            self.num_gpus_per_node = self.num_tasks_per_node
+            # update map_rank_to_gpu wrapper
+            if self.num_gpus_per_node > 1:
+                self.executable = './map_rank_to_gpu ' + self.executable
 
 @rfm.simple_test
 class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
-    valid_systems = ['lumi:small', 'lumi:gpu'] 
-    use_multithreading = False
-    time_limit = '10m'
+    # third naming level has been added in versions 7.x of OSU microbenchmarks
     benchmark_info = parameter([
-        ('mpi.pt2pt.osu_bw', 'bandwidth'),
-        ('mpi.pt2pt.osu_mbw_mr', 'bandwidth'),
-        ('mpi.pt2pt.osu_latency', 'latency'),
-        ('mpi.pt2pt.osu_multi_lat', 'latency')
+        ('mpi.pt2pt.standard.osu_bw', 'bandwidth'),
+        ('mpi.pt2pt.standard.osu_mbw_mr', 'bandwidth'),
+        ('mpi.pt2pt.standard.osu_latency', 'latency'),
+        ('mpi.pt2pt.standard.osu_multi_lat', 'latency')
     ], fmt=lambda x: x[0], loggable=True)
     osu_binaries = fixture(lumi_build_osu_benchmarks, scope='environment')
     allref = {
-        'mpi.pt2pt.osu_bw': {
+        'mpi.pt2pt.standard.osu_mbw_mr' : {
             'cpu': {
-                'lumi:small': {
-                    'bandwidth': (6757.0, -0.10, None, 'MB/s')
+                'lumi:standard': {
+                    'bandwidth': (29500.0, -0.05, 0.05, 'MB/s')
+                }
+            },
+	    'rocm': {
+                'lumi:gpu': {
+                    'bandwidth': (95000.0, -0.01, 0.01, 'MB/s')
+                }
+            }
+        },
+        'mpi.pt2pt.standard.osu_bw': {
+            'cpu': {
+                'lumi:standard': {
+                    'bandwidth': (24044.0, -0.05, 0.05, 'MB/s')
                 }
             },
             'rocm': {
                 'lumi:gpu': {
-                    'bandwidth': (4850.0, -0.10, None, 'MB/s')
+                    'bandwidth': (23820.0, -0.05, 0.05, 'MB/s')
                 }
             }
         },
-        'mpi.pt2pt.osu_latency': {
+        'mpi.pt2pt.standard.osu_latency': {
             'cpu': {
-                'lumi:small': {
-                    'latency': (1.8, None, 0.80, 'us')
+                'lumi:standard': {
+                    'latency': (1.8, -0.2, 0.2, 'us')
                 }
             },
             'rocm': {
                 'lumi:gpu': {
-                    'latency': (3.75, None, 0.50, 'us')
+                    'latency': (2.5, -0.1, 0.1, 'us')
                 }
             }
         },
-        'mpi.pt2pt.osu_multi_lat': {
+        'mpi.pt2pt.standard.osu_multi_lat': {
             'cpu': {
-                'lumi:small': {
-                    'latency': (1.95, None, 0.80, 'us')
+                'lumi:standard': {
+                    'latency': (1.95, -0.2, 0.2, 'us')
                 }
             },
+            'rocm': {
+                'lumi:gpu': {
+                    'latency': (3.0, -0.1, 0.1, 'us')
+                }
+            }
         }
     }
 
     @run_after('init')
-    def setup_num_tasks(self):
+    def setup_refs(self):
         build_type = self.osu_binaries.build_type
-        bench_name = self.benchmark_info[0]
-        if bench_name == 'mpi.pt2pt.osu_mbw_mr' or bench_name == 'mpi.pt2pt.osu_multi_lat':
-            self.num_tasks_per_node = 8
-            self.num_tasks *= self.num_tasks_per_node
-        else:
-            self.num_tasks_per_node = 1
-        if build_type == 'rocm':
-            self.num_gpus_per_node = self.num_tasks_per_node
-
+        bench_type = self.benchmark_info[1]
+        if bench_type == 'bandwidth':
+            self.num_iters = 100
         with contextlib.suppress(KeyError):
             self.reference = self.allref[self.benchmark_info[0]][build_type]
 
     @run_before('run')
-    def add_exec_prefix(self):
-        build_type = self.osu_binaries.build_type
-        bench_path = self.benchmark_info[0].replace('.', '/')
-        # update directory structure
-        self.executable = os.path.join(self.osu_binaries.stagedir,
-                                       self.osu_binaries.build_prefix,
-                                       'c',
-                                       bench_path)
-        if build_type == 'rocm':
-            self.executable = os.path.join(self.osu_binaries.stagedir, self.osu_binaries.build_prefix,
-                                           'map_rank_to_gpu ') + self.executable
+    def setup_num_tasks(self):
+        bench_name = self.benchmark_info[0]
+        if bench_name == 'mpi.pt2pt.standard.osu_mbw_mr' or bench_name == 'mpi.pt2pt.standard.osu_multi_lat': 
+            self.num_tasks_per_node = 8
+            self.job.launcher.options = ['--cpu-bind="map_cpu:1,14,17,30,33,46,49,62"']
+        else:
+            self.num_tasks_per_node = 1
+        self.num_tasks = 2*self.num_tasks_per_node
 
     @sanity_function
     def validate_test(self):
@@ -152,31 +162,51 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
 
 @rfm.simple_test
 class lumi_osu_collective_check(lumi_osu_benchmarks):
+    valid_systems = ['lumi:standard', 'lumi:gpu'] 
+    use_multithreading = False
+    # third naming level has been added in versions 7.x of OSU microbenchmarks
     benchmark_info = parameter([
-        #('mpi.collective.osu_alltoall', 'latency'),
-        ('mpi.collective.osu_allreduce', 'latency'),
+        ('mpi.collective.blocking.osu_allreduce', 'latency'),
     ], fmt=lambda x: x[0], loggable=True)
     num_nodes = parameter([1, 2, 4])
-    use_multithreading = False
-    valid_systems = ['lumi:small', 'lumi:gpu'] 
-    valid_prog_environs = ['cpeGNU', 'cpeCray', 'builtin-hip']
     osu_binaries = fixture(lumi_build_osu_benchmarks, scope='environment')
     allref = {
-        'mpi.collective.osu_allreduce': {
+        'mpi.collective.blocking.osu_allreduce': {
             1: {
-                'lumi:small': {
-                    'latency': (10.0, None, 0.1, 'us')
-                }
+                'cpu': {
+                    'lumi:standard': {
+                        'latency': (4.85, -0.2, 0.2, 'us')
+                    },
+                },
+                'rocm': {
+                    'lumi:gpu': {
+                        'latency': (1.25, -0.2, 0.2, 'us')
+                    },
+                },
             },
             2: {
-                'lumi:small': {
-                    'latency': (7.25, None, 0.05, 'us')
-                }
+                'cpu': {
+                    'lumi:standard': {
+                        'latency': (7.5, -0.2, 0.2, 'us')
+                    },
+                },
+                'rocm': {
+                    'lumi:gpu': {
+                        'latency': (6.0, -0.2, 0.2, 'us')
+                    },
+                },
             },
             4: {
-                'lumi:small': {
-                    'latency': (13.5, None, 0.05, 'us')
-                }
+                'cpu': {
+                    'lumi:standard': {
+                        'latency': (10.5, -0.25, 0.25, 'us')
+                    },
+                },
+                'rocm': {
+                    'lumi:gpu': {
+                        'latency': (10.5, -0.1, 0.1, 'us')
+                    },
+                },
             },
         },
     }
@@ -192,4 +222,8 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
 
         with contextlib.suppress(KeyError):
-            self.reference = self.allref[self.num_nodes]
+            self.reference = self.allref[self.benchmark_info[0]][self.num_nodes][build_type]
+
+    #@run_before('run')
+    #def fix_coll_validation_failure(self):
+    #    self.executable_opts.remove('-c')
