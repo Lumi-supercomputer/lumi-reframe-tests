@@ -165,14 +165,6 @@ class lumi_gromacs_multinode(gromacs_check):
         },
     }
 
-    @run_after('init')
-    def overwrite_cmds(self):
-    # Need to overwrite because of downloads being not possible on compute nodes
-        self.prerun_cmds = []
-        self.executable_opts = ['-nb', self.nb_impl, '-s', 
-            f'{self.bench_name}/benchmark.tpr'
-        ]
-
     @run_before('run')
     def setup_run(self):
         proc = self.current_partition.processor
