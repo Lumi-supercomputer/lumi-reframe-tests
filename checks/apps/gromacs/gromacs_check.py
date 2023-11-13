@@ -76,14 +76,14 @@ class lumi_gromacs_tmpi(gromacs_check):
     # Need to overwrite because of downloads being not possible on compute nodes
         self.prerun_cmds = []
         if self.nb_impl == 'gpu':
-            self.variables = {
+            self.env_vars = {
                 'SINGULARITYENV_GMX_GPU_DD_COMMS': 'true', 
                 'SINGULARITYENV_GMX_GPU_PME_PP_COMMS': 'true', 
                 'SINGULARITYENV_GMX_FORCE_UPDATE_DEFAULT_GPU': 'true', 
                 'SINGULARITYENV_OMP_NUM_THREADS': f'{self.num_cpus_per_gpu}', 
             }
         if self.nb_impl == 'cpu':
-            self.variables = {
+            self.env_vars = {
                 'OMP_NUM_THREADS': '6', 
                 'OMP_PROC_BIND': 'master',
                 'OMP_PLACES': '{0:5}:8:8',
@@ -131,13 +131,13 @@ class lumi_gromacs_tmpi(gromacs_check):
             self.modules = ['GROMACS']
 
 @rfm.simple_test
-class lumi_gromacs_multinode(gromacs_check):
+class lumi_gromacs_mpi(gromacs_check):
     descr = """This is to test multi-node, MPI version of GROMACS.""" 
     maintainers = ['mszpindler']
     use_multithreading = False
     executable_opts += ['-dlb yes', '-ntomp 1', '-npme -1']
     valid_prog_environs = ['cpeGNU']
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:standard']
     modules = ['GROMACS']
     time_limit = '15m'
 
@@ -147,45 +147,34 @@ class lumi_gromacs_multinode(gromacs_check):
     
     allref = {
         2: {
-            'zen3': { # Collected initial performance numbers after SS11 upgrade
-                'HECBioSim/Crambin': (280.267, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (210.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (31.0, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (14.269, None, None, 'ns/day'),
-            },
+            #'lumi:standard': { # Results collected with GROMACS 2023.2 and cpeGNU/22.12
+            'HECBioSim/Crambin': (632.0, -0.05, 0.05, 'ns/day'),
+            'HECBioSim/Glutamine-Binding-Protein': (237.0, -0.05, 0.05, 'ns/day'),
+            'HECBioSim/hEGFRDimer': (26.8, -0.05, 0.05, 'ns/day'),
+            'HECBioSim/hEGFRDimerPair': (13.4,-0.1, 0.1, 'ns/day'),
+            #},
         },
         4: {
-            'zen3': { # Collected initial performance numbers after SS11 upgrade
-                'HECBioSim/Crambin': (295.263, None, None, 'ns/day'),
-                'HECBioSim/Glutamine-Binding-Protein': (190.459, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimer': (32.232, None, None, 'ns/day'),
-                'HECBioSim/hEGFRDimerPair': (21.66, None, None, 'ns/day'),
-                'HECBioSim/hEGFRtetramerPair': (9.58, None, None, 'ns/day'),
-            },
+            #'lumi:standard': { # Results collected with GROMACS 2023.2 and cpeGNU/22.12
+            'HECBioSim/Crambin': (576.5, -0.05, 0.05, 'ns/day'),
+            'HECBioSim/Glutamine-Binding-Protein': (375.0, -0.05, 0.05, 'ns/day'),
+            'HECBioSim/hEGFRDimer': (47.5, -0.05, 0.05, 'ns/day'),
+            'HECBioSim/hEGFRDimerPair': (24.5, -0.1, 0.1, 'ns/day'),
+            'HECBioSim/hEGFRtetramerPair': (11.1, -0.1, 0.1, 'ns/day'),
+            #},
         },
     }
 
     @run_before('run')
     def setup_run(self):
-        proc = self.current_partition.processor
-
-        # Choose arch; we set explicitly the GPU arch, since there is no
-        # auto-detection
-        arch = proc.arch
-
         try:
-            found = self.allref[self.num_nodes][arch][self.bench_name]
+            found = self.allref[self.num_nodes][self.bench_name]
         except KeyError:
-            self.skip(f'Configuration with {self.num_nodes} node(s) of '
-                      f'{self.bench_name!r} is not supported on {arch!r}')
-
-        # Setup performance references
+            self.skip(f'No reference performance results for {self.bench_name!r} with {self.num_nodes}')
+        self.num_tasks_per_node = 128
+        self.num_tasks = self.num_nodes * self.num_tasks_per_node
         self.reference = {
             '*': {
-                'perf': self.allref[self.num_nodes][arch][self.bench_name]
+                'perf': self.allref[self.num_nodes][self.bench_name]
             }
         }
-
-        # Setup parallel run
-        self.num_tasks_per_node = proc.num_cores
-        self.num_tasks = self.num_nodes * self.num_tasks_per_node
