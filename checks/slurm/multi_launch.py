@@ -4,7 +4,7 @@ from reframe.core.backends import getlauncher
 
 @rfm.simple_test
 class MultiLaunchTest(rfm.RunOnlyRegressionTest):
-    valid_systems = ['lumi:gpu']
+    valid_systems = ['lumi:gpu', 'lumi:small']
     valid_prog_environs = ['builtin']
     executable = 'wait'
     num_tasks_per_node = 3
