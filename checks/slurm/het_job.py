@@ -37,7 +37,7 @@ class HeterogeneousJob(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def set_omp_vars(self):
-        self.variables = {
+        self.env_vars = {
             'OMP_PLACES': self.omp_bind,
             'OMP_PROC_BIND': self.omp_proc_bind,
         }
