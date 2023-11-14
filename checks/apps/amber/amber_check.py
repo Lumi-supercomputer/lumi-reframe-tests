@@ -3,7 +3,6 @@ import contextlib
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-@rfm.simple_test
 class amber_nve20_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''Amber NVE test.
 
