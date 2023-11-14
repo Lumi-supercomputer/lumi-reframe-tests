@@ -13,7 +13,7 @@ class AffinityTaskBase(rfm.RunOnlyRegressionTest):
     # Variables to control the hint and binding options on the launcher.
     multithread = parameter([True, False])
     valid_systems = ['lumi:gpu', 'lumi:small']
-    valid_prog_environs = ['PrgEnv-gnu']
+    valid_prog_environs = ['builtin']
     maintainers = ['mszpindler']
     tags = {'production'}
 
@@ -27,15 +27,15 @@ class AffinityTaskBase(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def set_omp_vars(self):
-        self.variables = {
+        self.env_vars = {
             'OMP_PROC_BIND': 'close'
         }
         if self.multithread:
             self.use_multithreading = True
-            self.variables['OMP_PLACES'] = 'threads' 
+            self.env_vars['OMP_PLACES'] = 'threads' 
         else:
             self.use_multithreading = False
-            self.variables['OMP_PLACES'] = 'cores' 
+            self.env_vars['OMP_PLACES'] = 'cores' 
 
 @rfm.simple_test
 class SingleTask_Check(AffinityTaskBase):
