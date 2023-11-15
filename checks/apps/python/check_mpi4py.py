@@ -3,21 +3,32 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class osu_gpu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
+class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
     # This check was adapted to GPUs from mpi4py's script
     # https://github.com/mpi4py/mpi4py/blob/master/demo/osu_bw.py
-    descr = 'OSU GPU to GPU bandwith test with mpi4py and cupy'
-    valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['cpeGNU']
-    modules = ['rocm', 'CuPy']
-    num_tasks = 2
-    exclusive_access = True
-    executable = 'python osu_bw_cupy.py'
-    env_vars = {
-        'MPICH_GPU_SUPPORT_ENABLED': '1',
-        'LD_PRELOAD': '${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so'
-    }
 
+    descr = 'OSU CPU and GPU to GPU bandwith test with mpi4py and cupy'
+    device_type = parameter(['cpu', 'gpu'])
+    num_tasks = 2
+    executable = 'python'
+
+    @run_after('init')
+    def setup_test(self):
+        if self.device_type == 'gpu':
+            self.valid_systems = ['lumi:gpu']
+            self.valid_prog_environs = ['cpeGNU']
+            self.modules = ['cray-python', 'rocm', 'CuPy']
+            self.executable_opts = ['osu_bw_cupy.py']
+            self.env_vars = {
+                'MPICH_GPU_SUPPORT_ENABLED': '1',
+                'LD_PRELOAD': '${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so'
+            }
+        if self.device_type == 'cpu':
+            self.valid_systems = ['lumi:small']
+            self.valid_prog_environs = ['PrgEnv-gnu']
+            self.modules = ['cray-python']
+            self.executable_opts = ['osu_bw.py']
+   
     tags = {'python', 'lumi-stack'}
 
     @sanity_function
@@ -32,22 +43,14 @@ class osu_gpu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
 
 
 @rfm.simple_test
-class osu_gpu_pt2pt_bw_two_nodes_test(osu_gpu_pt2pt_bw_base):
-    num_tasks_per_node = 1
-    num_gpus_per_node = 1
+class mpi4py_osu_pt2pt_bw_two_nodes_test(mpi4py_osu_pt2pt_bw_base):
     reference = {
         'lumi:gpu': {'bandwidth': (23952.10, -0.05, None, 'MB/s')}
     }
 
-
-@rfm.simple_test
-class osu_gpu_pt2pt_bw_single_node_test(osu_gpu_pt2pt_bw_base):
-    num_tasks_per_node = 2
-    num_gpus_per_node = 2
-    reference = {
-        'lumi:gpu': {'bandwidth': (125288.14, -0.05, None, 'MB/s')}
-    }
-
     @run_before('run')
-    def set_gpu_binding(self):
-        self.job.options = ['--gpu-bind=closest']
+    def setup_job(self):
+        self.num_tasks_per_node = 1
+        if self.device_type == 'gpu':
+            self.num_gpus_per_node = 1
+            self.job.options = ['--gpus-per-task=1']
