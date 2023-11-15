@@ -21,7 +21,6 @@ class lumi_fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
    def validate_download(self):
        return sn.assert_eq(self.job.exitcode, 0)
    
-
 class lumi_build_osu_benchmarks(build_osu_benchmarks):
     build_type = parameter(['cpu', 'rocm'])
     osu_benchmarks = fixture(lumi_fetch_osu_benchmarks, scope='session', variables={'version': '7.3'})
@@ -64,15 +63,6 @@ class lumi_osu_benchmarks(osu_build_run):
                                        self.osu_binaries.build_prefix,
                                        'c', 
                                        bench_path)
-
-    @run_before('run')
-    def setup_gpu_jobs(self):
-        build_type = self.osu_binaries.build_type
-        if build_type == 'rocm':
-            self.num_gpus_per_node = self.num_tasks_per_node
-            # update map_rank_to_gpu wrapper
-            if self.num_gpus_per_node > 1:
-                self.executable = './map_rank_to_gpu ' + self.executable
 
 @rfm.simple_test
 class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
@@ -144,21 +134,27 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
         with contextlib.suppress(KeyError):
             self.reference = self.allref[self.benchmark_info[0]][build_type]
 
+
     @run_before('run')
     def setup_num_tasks(self):
         bench_name = self.benchmark_info[0]
+        build_type = self.osu_binaries.build_type
         if bench_name == 'mpi.pt2pt.standard.osu_mbw_mr' or bench_name == 'mpi.pt2pt.standard.osu_multi_lat': 
             self.num_tasks_per_node = 8
             self.job.launcher.options = ['--cpu-bind="map_cpu:1,14,17,30,33,46,49,62"']
         else:
             self.num_tasks_per_node = 1
         self.num_tasks = 2*self.num_tasks_per_node
+        if build_type == 'rocm':
+            self.num_gpus_per_node = self.num_tasks_per_node
+            # update map_rank_to_gpu wrapper
+            if self.num_gpus_per_node > 1:
+                self.executable = './map_rank_to_gpu ' + self.executable
 
     @sanity_function
     def validate_test(self):
         # with validation
         return sn.assert_found(rf'^{self.message_size}.*Pass', self.stdout)
-
 
 @rfm.simple_test
 class lumi_osu_collective_check(lumi_osu_benchmarks):
@@ -211,19 +207,20 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
         },
     }
 
-    @run_after('init')
+    @run_before('run')
     def setup_num_tasks(self):
         build_type = self.osu_binaries.build_type
         if build_type == 'rocm':
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = self.num_tasks_per_node
+            if self.num_gpus_per_node > 1:
+                self.executable = './map_rank_to_gpu ' + self.executable
         else:
             self.num_tasks_per_node = 128
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
 
+    @run_after('init')
+    def setup_refs(self):
+        build_type = self.osu_binaries.build_type
         with contextlib.suppress(KeyError):
             self.reference = self.allref[self.benchmark_info[0]][self.num_nodes][build_type]
-
-    #@run_before('run')
-    #def fix_coll_validation_failure(self):
-    #    self.executable_opts.remove('-c')
