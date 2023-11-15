@@ -6,6 +6,7 @@ import reframe.utility.sanity as sn
 class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
     # This check was adapted to GPUs from mpi4py's script
     # https://github.com/mpi4py/mpi4py/blob/master/demo/osu_bw.py
+
     descr = 'OSU CPU and GPU to GPU bandwith test with mpi4py and cupy'
     device_type = parameter(['cpu', 'gpu'])
     num_tasks = 2
@@ -28,6 +29,7 @@ class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
             self.modules = ['cray-python']
             self.executable_opts = ['osu_bw.py']
    
+    tags = {'python', 'lumi-stack'}
 
     @sanity_function
     def assert_found_max_bandwidth(self):
@@ -52,4 +54,3 @@ class mpi4py_osu_pt2pt_bw_two_nodes_test(mpi4py_osu_pt2pt_bw_base):
         if self.device_type == 'gpu':
             self.num_gpus_per_node = 1
             self.job.options = ['--gpus-per-task=1']
-
