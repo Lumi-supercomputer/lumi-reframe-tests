@@ -69,7 +69,10 @@ class lumi_gromacs_pep_h(gromacs_check):
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
-        npme_ranks = 2*self.num_nodes
+        if self.fft_variant == 'vkfft':
+            npme_ranks = 2*self.num_nodes
+        else:
+            npme_ranks = 1
         self.executable_opts += [
             '-nsteps 10000',
             '-nstlist 400',
