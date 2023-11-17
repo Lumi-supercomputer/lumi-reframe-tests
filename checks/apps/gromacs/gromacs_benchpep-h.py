@@ -6,9 +6,11 @@ from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 @rfm.simple_test
 class lumi_gromacs_pep_h(gromacs_check):
     benchmark_info = parameter([
-        ('benchPEP-h', -1.08735e+06, 0.001), 
+        ('benchPEP-h', 1.27e-04, 1e-05), 
     ], fmt=lambda x: x[0], loggable=True)
+    update_mode = parameter(['gpu', 'cpu'])
     nb_impl = parameter(['gpu'])
+    bonded_impl = parameter(['gpu'])
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
@@ -18,7 +20,7 @@ class lumi_gromacs_pep_h(gromacs_check):
     time_limit = '15m'
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeGNU']
-    modules = ['GROMACS/2023.2-cpeGNU-22.12-HeFFTe-GPU']
+    fft_variant = parameter(['heffte', 'vkfft'])
 
     allref = {
         1: {
@@ -60,13 +62,10 @@ class lumi_gromacs_pep_h(gromacs_check):
         return self.__nrg_tol
 
     @run_after('init')
-    def prepare_test(self):
+    def prepare_ztest(self):
         self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
-        self.descr = f'GROMACS {self.__bench} benchmark (NB: {self.nb_impl})'
-        #self.prerun_cmds = [
-        #    f'curl -LJO https://www.mpinat.mpg.de/{self.__bench} && unzip {self.__bench}.zip && ln -s {self.__bench}.tpr benchmark.tpr'
-        #]
-        bench_file_path = os.path.join(self.current_system.resourcesdir, 'gromacs-benchmarks', 'www.mpinat.mpg.de', self.__bench, f'{self.__bench}.tpr') 
+        self.descr = f'GROMACS {self.__bench} GPU benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})'
+        bench_file_path = os.path.join(self.current_system.resourcesdir, 'gromacs-benchmarks', 'www.mpinat.mpg.de', self.__bench, f'{self.__bench}.tpr')
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
@@ -76,14 +75,14 @@ class lumi_gromacs_pep_h(gromacs_check):
             '-nstlist 400',
             '-noconfout',
             '-nb', self.nb_impl,
-            f'-npme {npme_ranks}',
-            '-pme', self.nb_impl, 
-            '-update', self.nb_impl, 
-            '-bonded', self.nb_impl, 
+            '-npme', f'{npme_ranks}',
+            '-pme', 'gpu', 
+            '-update', self.update_mode,
+            '-bonded', self.bonded_impl,
             '-pin on',
             '-s benchmark.tpr'
         ]
-        self.variables = {
+        self.env_vars = {
             'MPICH_GPU_SUPPORT_ENABLED': '1',
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
@@ -92,11 +91,21 @@ class lumi_gromacs_pep_h(gromacs_check):
             'GMX_PMEONEDD': '1'
         }
 
+    @run_after('init')
+    def set_modules(self):
+        match self.fft_variant:
+            case 'heffte':
+                self.modules = ['GROMACS/2023.2-cpeGNU-22.12-HeFFTe-GPU']
+            case 'vkfft':
+                self.modules = ['GROMACS/2023.2-cpeGNU-22.12-VkFFT-GPU']
+            case _:
+                self.skip('FFT library not defined')
+
     @run_before('run')
     def set_cpu_mask(self):
         cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
         self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
-         
+
     @run_after('init')
     def add_select_gpu_wrapper(self):
         self.prerun_cmds += [
@@ -112,14 +121,19 @@ class lumi_gromacs_pep_h(gromacs_check):
 
     @run_after('init')
     def setup_nb(self):
+    # Fix it !
         valid_systems = {
             'gpu': {
+                1: ['lumi:gpu'],
+                2: ['lumi:gpu'],
+            },
+            'cpu': {
                 1: ['lumi:gpu'],
                 2: ['lumi:gpu'],
             }
         }
         try:
-            self.valid_systems = valid_systems[self.nb_impl][self.num_nodes]
+            self.valid_systems = valid_systems[self.update_mode][self.num_nodes]
         except KeyError:
             self.valid_systems = []
 
@@ -128,19 +142,13 @@ class lumi_gromacs_pep_h(gromacs_check):
     def perf(self):
         return sn.extractsingle(r'Performance:\s+(?P<perf>\S+)',
                                 'md.log', 'perf', float)
-
     @deferrable
-    def energy(self):
-        return sn.extractsingle(r'\s+Potential\s+Kinetic En\.\s+Total Energy'
-                                r'\s+Conserved En\.\s+Temperature\n'
-                                r'(\s+\S+){2}\s+(?P<energy>\S+)(\s+\S+){2}\n'
-                                r'\s+Pressure \(bar\)\s+Constr\. rmsd',
-                                'md.log', 'energy', float, item=-1)
-
+    def energy_drift(self):
+        return sn.extractsingle(r'\s+Conserved\s+energy\s+drift\:\s+(\S+)', 'md.log', 1, float)
+    
     @sanity_function
     def assert_energy_readout(self):
-        #energy_diff = sn.abs(energy - self.energy_ref)
-        return sn.assert_found('Finished mdrun', 'md.log')
+        return sn.and_(sn.assert_found('Finished mdrun', 'md.log'), sn.assert_le(sn.abs(self.energy_drift() - self.energy_ref), self.energy_tol))
 
     @run_before('run')
     def setup_run(self):
@@ -154,6 +162,7 @@ class lumi_gromacs_pep_h(gromacs_check):
                       f'{self.bench_name!r} is not supported on {arch!r}')
 
         # Setup performance references
+        # Refactor this (replace arch) !
         self.reference = {
             '*': {
                 'perf': self.allref[self.num_nodes][arch][self.bench_name]
