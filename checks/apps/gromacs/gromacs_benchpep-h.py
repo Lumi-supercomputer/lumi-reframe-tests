@@ -62,7 +62,7 @@ class lumi_gromacs_pep_h(gromacs_check):
         return self.__nrg_tol
 
     @run_after('init')
-    def prepare_ztest(self):
+    def prepare_test(self):
         self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
         self.descr = f'GROMACS {self.__bench} GPU benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})'
         bench_file_path = os.path.join(self.current_system.resourcesdir, 'gromacs-benchmarks', 'www.mpinat.mpg.de', self.__bench, f'{self.__bench}.tpr')
@@ -71,7 +71,7 @@ class lumi_gromacs_pep_h(gromacs_check):
         ]
         npme_ranks = 2*self.num_nodes
         self.executable_opts += [
-            '-nsteps 5000',
+            '-nsteps 10000',
             '-nstlist 400',
             '-noconfout',
             '-nb', self.nb_impl,
