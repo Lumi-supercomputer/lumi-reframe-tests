@@ -11,6 +11,7 @@ class lumi_gromacs_pep_h(gromacs_check):
     update_mode = parameter(['gpu', 'cpu'])
     nb_impl = parameter(['gpu'])
     bonded_impl = parameter(['gpu'])
+    fft_variant = parameter(['heffte', 'vkfft'])
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
@@ -20,17 +21,22 @@ class lumi_gromacs_pep_h(gromacs_check):
     time_limit = '15m'
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeGNU']
-    fft_variant = parameter(['heffte', 'vkfft'])
 
     allref = {
         1: {
-            'gfx90a': {
-                'benchPEP-h': (7.3, -0.05, 0.05, 'ns/day'),
+            'gpu': { # update=gpu, gpu resident mode
+                'benchPEP-h': (7.7, -0.05, 0.05, 'ns/day'),
+            },
+            'cpu': { # update=cpu, gpu offload mode
+                'benchPEP-h': (4.6, -0.05, 0.05, 'ns/day'),
             },
         },
         2: {
-            'gfx90a': {
+            'gpu': { # update=gpu, gpu resident mode
                 'benchPEP-h': (13.2, -0.05, 0.05, 'ns/day'),
+            },
+            'cpu': { # update=cpu, gpu offload mode
+                'benchPEP-h': (9.5, -0.05, 0.05, 'ns/day'),
             },
         },
     }
@@ -69,7 +75,7 @@ class lumi_gromacs_pep_h(gromacs_check):
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
-        if self.fft_variant == 'vkfft':
+        if self.fft_variant == 'heffte':
             npme_ranks = 2*self.num_nodes
         else:
             npme_ranks = 1
@@ -89,7 +95,7 @@ class lumi_gromacs_pep_h(gromacs_check):
             'MPICH_GPU_SUPPORT_ENABLED': '1',
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
-            'OMP_NUM_THREADS': '7',
+            'OMP_NUM_THREADS': '6',
             'GMX_GPU_PME_DECOMPOSITION': '1',
             'GMX_PMEONEDD': '1'
         }
@@ -124,19 +130,17 @@ class lumi_gromacs_pep_h(gromacs_check):
 
     @run_after('init')
     def setup_nb(self):
-    # Fix it !
         valid_systems = {
-            'gpu': {
+            'heffte': {
                 1: ['lumi:gpu'],
                 2: ['lumi:gpu'],
             },
-            'cpu': {
+            'vkfft': {
                 1: ['lumi:gpu'],
-                2: ['lumi:gpu'],
             }
         }
         try:
-            self.valid_systems = valid_systems[self.update_mode][self.num_nodes]
+            self.valid_systems = valid_systems[self.fft_variant][self.num_nodes]
         except KeyError:
             self.valid_systems = []
 
@@ -155,20 +159,16 @@ class lumi_gromacs_pep_h(gromacs_check):
 
     @run_before('run')
     def setup_run(self):
-        proc = self.current_partition.processor
-        arch = 'gfx90a'
-
         try:
-            found = self.allref[self.num_nodes][arch][self.bench_name]
+            found = self.allref[self.num_nodes][self.update_mode][self.bench_name]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) of '
                       f'{self.bench_name!r} is not supported on {arch!r}')
 
         # Setup performance references
-        # Refactor this (replace arch) !
         self.reference = {
             '*': {
-                'perf': self.allref[self.num_nodes][arch][self.bench_name]
+                'perf': self.allref[self.num_nodes][self.update_mode][self.bench_name]
             }
         }
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
