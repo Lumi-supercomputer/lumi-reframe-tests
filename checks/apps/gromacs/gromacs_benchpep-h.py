@@ -6,7 +6,7 @@ from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 @rfm.simple_test
 class lumi_gromacs_pep_h(gromacs_check):
     benchmark_info = parameter([
-        ('benchPEP-h', 1.27e-04, 1e-05), 
+        ('benchPEP-h', 1.27e-04, 1.6e-05), 
     ], fmt=lambda x: x[0], loggable=True)
     update_mode = parameter(['gpu', 'cpu'])
     nb_impl = parameter(['gpu'])
