@@ -9,17 +9,13 @@ class singularity_rocm_image(rfm.RunOnlyRegressionTest):
     num_tasks_per_node = 1
     num_gpus_per_node = 8
 
-    #@run_before('run')
-    #def prepare_build(self):
-    #    self.sourcesdir = '/appl/local/containers/sif-images/'
-
     @sanity_function
     def assert_gpus_found(self):
         num_gpus = sn.count(sn.findall(r'\s+Name\:\s+gfx90a', self.stdout))
         return sn.assert_eq(num_gpus, self.num_gpus_per_node)
 
 @rfm.simple_test
-class test_rocm(singularity_rocm_image):
+class test_rocm_container(singularity_rocm_image):
     valid_prog_environs = ['builtin']
     rocm_version = parameter(['5.5.1', '5.6.1'])
 
@@ -27,4 +23,3 @@ class test_rocm(singularity_rocm_image):
     def set_container_variables(self):
         self.container_platform.image = f'/appl/local/containers/sif-images/lumi-rocm-rocm-{self.rocm_version}.sif'
         self.container_platform.command = 'rocminfo'
-
