@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class HeCBench_heat(rfm.RegressionTest):
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['cpeGNU']
+    valid_prog_environs = ['cpeGNU', 'cpeAMD']
     modules = ['rocm', 'AdaptiveCpp']
     num_gpus_per_node = 1
     build_system = 'Make'
