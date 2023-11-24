@@ -39,3 +39,5 @@ class lumi_quantumespresso_cpu_check(quantumespresso_check):
     reference = {
         'lumi:small': {'time': (110.0, None, 0.05, 's')},
     } 
+
+    tags = {'contrib/22.08', 'contrib/22.12'}

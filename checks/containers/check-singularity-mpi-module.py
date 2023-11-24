@@ -35,6 +35,8 @@ class singularity_cray_mpich_bindings_test(rfm.RunOnlyRegressionTest):
 class test_glibc_mount(singularity_cray_mpich_bindings_test):
     modules = ['singularity-bindings']
 
+    tags = {'singularity', 'contrib/22.08'}
+
     @run_before('run')
     def set_container_variables(self):
         self.container_platform.image = 'osu-debian-jessie.sif'
@@ -45,6 +47,8 @@ class test_glibc_mount(singularity_cray_mpich_bindings_test):
 class test_no_glibc_mount(singularity_cray_mpich_bindings_test):
     pe_version = cray_cdt_version()
     modules = [f'singularity-bindings/system-cpeGNU-{pe_version}-noglibc']
+
+    tags = {'singularity', 'contrib/22.08'}
 
     @run_before('run')
     def set_container_variables(self):

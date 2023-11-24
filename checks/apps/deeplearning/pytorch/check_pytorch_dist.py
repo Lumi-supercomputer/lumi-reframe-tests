@@ -11,7 +11,7 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     num_tasks = 32
     num_tasks_per_node = 8
     num_gpus_per_node = 8
-    variables = {
+    env_vars = {
         'NCCL_DEBUG': 'INFO',
         'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
         'NCCL_NET_GDR_LEVEL': '3',

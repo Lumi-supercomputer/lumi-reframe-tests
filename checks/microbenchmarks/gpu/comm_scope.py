@@ -6,9 +6,9 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class comm_scope(rfm.RegressionTest):
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['builtin-hip']
+    valid_prog_environs = ['builtin']
     sourcesdir = 'https://github.com/c3sr/comm_scope -b v0.12.0'
-    modules = ['buildtools']
+    modules = ['buildtools', 'rocm']
     build_system = 'CMake'
     executable = './build/comm_scope'
     executable_opts = ['--benchmark_filter="Comm_implicit_managed_GPUWrGPU_fine/0/([1-7])/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
@@ -25,13 +25,15 @@ class comm_scope(rfm.RegressionTest):
         }
     }
 
+    tags = {'production', 'craype'}
+
     @run_after('setup')
     def setup_compile(self):
         self.build_job.num_cpus_per_task = 64
 
     @run_before('run')
     def set_env_vars(self):
-        self.variables = {
+        self.env_vars = {
             'LD_LIBRARY_PATH': '$LD_LIBRARY_PATH:/opt/rocm/llvm/lib/',
         }
 

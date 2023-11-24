@@ -15,7 +15,7 @@ class AffinityTaskBase(rfm.RunOnlyRegressionTest):
     valid_systems = ['lumi:gpu', 'lumi:small']
     valid_prog_environs = ['builtin']
     maintainers = ['mszpindler']
-    tags = {'production'}
+    tags = {'production', 'lumi'}
 
     exclusive_access= True
     modules = ['lumi-CPEtools']

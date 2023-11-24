@@ -13,6 +13,8 @@ class HipInfo(rfm.RegressionTest):
     maintainers = ['mszpindler']
     num_gpus_per_node = 8
 
+    tags = {'production', 'craype'}
+
     @sanity_function
     def validate_solution(self):
         num_devices = sn.count(sn.findall(r'^device#', self.stdout))

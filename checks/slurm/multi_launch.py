@@ -11,6 +11,8 @@ class MultiLaunchTest(rfm.RunOnlyRegressionTest):
     num_nodes = 3
     num_tasks = num_nodes*num_tasks_per_node
 
+    tags = {'production', 'lumi'}
+
     @run_before('run')
     def pre_launch(self):
         cmd = self.job.launcher.run_command(self.job)

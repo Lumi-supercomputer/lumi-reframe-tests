@@ -29,6 +29,8 @@ class lumi_gromacs_infinityhub_container(gromacs_check):
         },
     }
 
+    tags = {'production', 'singularity'}
+
     @deferrable
     def energy_benchpep(self):
         return sn.extractsingle(r'\s+Total Energy\s+Conserved En\.\s+Temperature\s+Pressure \(bar\)\s+Constr\. rmsd\n'

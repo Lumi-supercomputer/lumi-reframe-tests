@@ -8,9 +8,10 @@ class abinit_check(rfm.RunOnlyRegressionTest):
     maintainers = ['mszpindler']
     prerun_cmds = ['sed -i -e "/nstep/s/2/20/" t01.abi']
     executable_opts = ['t01.abi']
-    variables = {
+    env_vars = {
         'ABI_PSPDIR': '.',
     }
+
 
     @sanity_function
     def assert_simulation_success(self):
@@ -31,3 +32,5 @@ class lumi_abinit_cpu_check(abinit_check):
     reference = {
         'lumi:small': {'time': (10.0, None, 0.5, 's')}, 
     } 
+
+    tags = {'contrib/21.12'}

@@ -42,6 +42,8 @@ class lumi_gromacs_mpi(gromacs_check):
         },
     }
 
+    tags = {'contrib/22.08', 'contrib/23.09'}
+
     @run_before('run')
     def setup_run(self):
         try:

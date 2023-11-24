@@ -12,6 +12,8 @@ class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
     num_tasks = 2
     executable = 'python'
 
+    tags = {'production', 'python', 'craype', 'contrib/22.08', 'contrib/22.12'}
+
     @run_after('init')
     def setup_test(self):
         if self.device_type == 'gpu':
@@ -29,8 +31,6 @@ class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
             self.modules = ['cray-python']
             self.executable_opts = ['osu_bw.py']
    
-    tags = {'python', 'lumi-stack'}
-
     @sanity_function
     def assert_found_max_bandwidth(self):
         max_bandwidth = r'4194304'
