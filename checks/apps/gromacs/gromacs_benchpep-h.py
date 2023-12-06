@@ -17,17 +17,16 @@ class lumi_gromacs_pep_h(gromacs_check):
     exclusive_access = True
     num_nodes = parameter([1,2], loggable=True)
     num_gpus_per_node = 8
-    num_tasks_per_node = 8
     time_limit = '15m'
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['cpeGNU']
+    valid_prog_environs = ['cpeAMD']
 
     allref = {
         1: {
             'gpu': { # update=gpu, gpu resident mode
-                'benchPEP-h': (7.7, -0.05, 0.05, 'ns/day'),
+                'benchPEP-h': (7.3, -0.05, 0.05, 'ns/day'),
             },
-            'cpu': { # update=cpu, gpu offload mode
+            'cpu': { # update=cpu, force offload mode
                 'benchPEP-h': (4.6, -0.05, 0.05, 'ns/day'),
             },
         },
@@ -35,7 +34,7 @@ class lumi_gromacs_pep_h(gromacs_check):
             'gpu': { # update=gpu, gpu resident mode
                 'benchPEP-h': (13.2, -0.05, 0.05, 'ns/day'),
             },
-            'cpu': { # update=cpu, gpu offload mode
+            'cpu': { # update=cpu, force offload mode
                 'benchPEP-h': (9.5, -0.05, 0.05, 'ns/day'),
             },
         },
@@ -75,10 +74,21 @@ class lumi_gromacs_pep_h(gromacs_check):
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
-        if self.fft_variant == 'heffte':
-            npme_ranks = 2*self.num_nodes
-        else:
-            npme_ranks = 1
+
+    @run_after('init')
+    def setup_fft_variant(self):
+        match self.fft_variant:
+            case 'heffte':
+                self.modules = ['GROMACS/2023.2-cpeAMD-22.12-HeFFTe-GPU']
+                self.num_tasks_per_node = 8
+                npme_ranks = 2*self.num_nodes
+            case 'vkfft':
+                self.modules = ['GROMACS/2023.2-cpeAMD-22.12-VkFFT-GPU']
+                self.num_tasks_per_node = 8
+                npme_ranks = 1
+            case _:
+                self.skip('FFT library variant not defined')
+
         self.executable_opts += [
             '-nsteps 10000',
             '-nstlist 400',
@@ -88,27 +98,20 @@ class lumi_gromacs_pep_h(gromacs_check):
             '-pme', 'gpu', 
             '-update', self.update_mode,
             '-bonded', self.bonded_impl,
-            '-pin on',
             '-s benchmark.tpr'
         ]
         self.env_vars = {
             'MPICH_GPU_SUPPORT_ENABLED': '1',
+            'OMP_NUM_THREADS': '7',
+            'OMP_PROC_BIND': 'close',
+            'OMP_PLACES': 'cores',
+            'OMP_DISPLAY_ENV': '1',
+            'OMP_DISPLAY_AFFINITY': 'TRUE',
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
-            'OMP_NUM_THREADS': '6',
             'GMX_GPU_PME_DECOMPOSITION': '1',
             'GMX_PMEONEDD': '1'
         }
-
-    @run_after('init')
-    def set_modules(self):
-        match self.fft_variant:
-            case 'heffte':
-                self.modules = ['GROMACS/2023.2-cpeGNU-22.12-HeFFTe-GPU']
-            case 'vkfft':
-                self.modules = ['GROMACS/2023.2-cpeGNU-22.12-VkFFT-GPU']
-            case _:
-                self.skip('FFT library not defined')
 
     @run_before('run')
     def set_cpu_mask(self):
@@ -126,7 +129,6 @@ class lumi_gromacs_pep_h(gromacs_check):
             'chmod +x ./select_gpu'
         ]
         self.executable = './select_gpu ' + self.executable
-
 
     @run_after('init')
     def setup_nb(self):
