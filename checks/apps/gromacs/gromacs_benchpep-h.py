@@ -5,8 +5,10 @@ from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 
 @rfm.simple_test
 class lumi_gromacs_pep_h(gromacs_check):
+    # Here purpose of second and third parameters changes to total energy 
+    # at step 0 and energy drift; tolerances are now in readout functions
     benchmark_info = parameter([
-        ('benchPEP-h', 1.27e-04, 1.6e-05), 
+        ('benchPEP-h', [-1.43526e+08,1.27e-04], [0.001, 0.1]), 
     ], fmt=lambda x: x[0], loggable=True)
     update_mode = parameter(['gpu', 'cpu'])
     nb_impl = parameter(['gpu'])
@@ -51,20 +53,28 @@ class lumi_gromacs_pep_h(gromacs_check):
         return self.__bench
 
     @property
-    def energy_ref(self):
+    def energy_step0_ref(self):
         '''The energy reference value for this benchmark.
 
         :type: :class:`str`
         '''
-        return self.__nrg_ref
+        return self.__nrg_ref[0]
 
     @property
-    def energy_tol(self):
-        '''The energy tolerance value for this benchmark.
+    def energy_drift_ref(self):
+        '''The energy drift reference value for this benchmark.
 
         :type: :class:`str`
         '''
-        return self.__nrg_tol
+        return self.__nrg_ref[1]
+
+    @property
+    def energy_step0_tol(self):
+        return self.__nrg_tol[0]
+
+    @property
+    def energy_drift_tol(self):
+        return self.__nrg_tol[1]
 
     @run_after('init')
     def prepare_test(self):
@@ -154,10 +164,21 @@ class lumi_gromacs_pep_h(gromacs_check):
     @deferrable
     def energy_drift(self):
         return sn.extractsingle(r'\s+Conserved\s+energy\s+drift\:\s+(\S+)', 'md.log', 1, float)
+
+    @deferrable
+    def energy_step0(self):
+        return sn.extractsingle(r'\s+Kinetic En\.\s+Total Energy\s+Conserved En\.\s+Temperature\s+Pressure \(bar\)\n'
+                                r'(\s+\S+)\s+(?P<energy>\S+)(\s+\S+){3}\n'
+                                r'\s+Constr\. rmsd',
+                                'md.log', 'energy', float, item=-1)
     
     @sanity_function
     def assert_energy_readout(self):
-        return sn.and_(sn.assert_found('Finished mdrun', 'md.log'), sn.assert_le(sn.abs(self.energy_drift() - self.energy_ref), self.energy_tol))
+        return sn.all([
+            sn.assert_found('Finished mdrun', 'md.log', 'Run failed to complete'), 
+            sn.assert_reference(self.energy_step0(), self.energy_step0_ref, -self.energy_step0_tol, self.energy_step0_tol, 'Failed to meet reference value for total energy at step 0'),
+            sn.assert_reference(self.energy_drift(), self.energy_drift_ref, -self.energy_drift_tol, self.energy_drift_tol, 'Failed to meet reference value for conserved energy drift')
+        ])
 
     @run_before('run')
     def setup_run(self):
@@ -174,3 +195,6 @@ class lumi_gromacs_pep_h(gromacs_check):
             }
         }
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
+
+#@rfm.simple_test
+#class lumi_gromacs_stmv(gromacs_check):
