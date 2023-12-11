@@ -5,13 +5,15 @@ import reframe.utility.sanity as sn
 class nek5000_check(rfm.RegressionTest):
     valid_systems = ['lumi:small']
     valid_prog_environs = ['cpeGNU']
-    modules = ['partition/C', 'Nek5000']
+    modules = ['Nek5000']
     executable = './nek5000'
     strict_check = False
     descr = f'Nek500 test'
     maintainers = ['']
     build_system = 'CustomBuild'
     num_tasks = 32
+
+    tags = {'contrib/21.12'}
 
     @run_before('compile')
     def build_test(self):

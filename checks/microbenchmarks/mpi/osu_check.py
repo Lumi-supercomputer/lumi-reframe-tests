@@ -40,7 +40,7 @@ class lumi_osu_benchmarks(osu_build_run):
     use_multithreading = False
     exclusive_access = True
     time_limit = '10m'
-    tags = {'production', 'benchmark',}
+    tags = {'production', 'craype'}
     maintainers = ['@rsarm', '@mszpindler']
 
     @run_after('init')

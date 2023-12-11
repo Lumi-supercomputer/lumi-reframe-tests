@@ -15,7 +15,8 @@ class HeterogeneousJob(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['builtin']
     maintainers = ['mszpindler']
     modules = ['lumi-CPEtools']
-    tags = {'production'}
+
+    tags = {'production', 'lumi'}
 
     exclusive_access= True
     time_limit = 180

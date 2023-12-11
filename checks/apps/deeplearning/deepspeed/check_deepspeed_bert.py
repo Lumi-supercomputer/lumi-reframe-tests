@@ -17,13 +17,12 @@ class bert_fetch_data_tokenizer(rfm.RunOnlyRegressionTest):
     '''Fixture for fetching the the dataset and tokenizer'''
     local = True
     modules = ['DeepSpeed']
-    variables = {'HF_HOME': './huggingface_home'}
+    env_vars = {'HF_HOME': './huggingface_home'}
     executable = 'python bert_squad_deepspeed_train.py --download-only'
 
     @sanity_function
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
-
 
 class bert_fetch_data_tokenizer_singularity(bert_fetch_data_tokenizer):
     modules = []
@@ -50,7 +49,7 @@ class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
         'lumi:gpu': {
             'samples_per_sec': (5579, -0.05, None, 'samples/sec')}
     }
-    variables = {
+    env_vars = {
         'NCCL_DEBUG': 'INFO',
         'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
         'NCCL_NET_GDR_LEVEL': '3',
@@ -83,6 +82,8 @@ class deepspeed_bert_qa_train(deepspeed_bert_qa_train_base):
     modules = ['DeepSpeed']
     bert_cache = fixture(bert_fetch_data_tokenizer, scope='session')
 
+    tags = {'python', 'contrib/22.08'}
+
     @run_before('run')
     def prepare_job(self):
         bert_cache_dir = os.path.join(self.bert_cache.stagedir, 'cache')
@@ -103,6 +104,8 @@ class deepspeed_bert_qa_train_singularity(deepspeed_bert_qa_train_base):
     modules = ['OpenMPI']
     bert_cache = fixture(bert_fetch_data_tokenizer_singularity,
                          scope='session')
+
+    tags = {'singularity', 'contrib/22.06', 'contrib/22.08'}
 
     @run_before('run')
     def set_container_variables(self):
@@ -132,7 +135,7 @@ class deepspeed_bert_qa_train_singularity(deepspeed_bert_qa_train_base):
             *self.executable_opts,
             '--bert-cache-dir /bert_cache_dir/cache'
         ])
-        self.variables.update({
+        self.env_vars.update({
             'HF_HOME': os.path.join(bert_cache_dir, 'huggingface_home')
         })
 

@@ -9,6 +9,8 @@ class singularity_rocm_image(rfm.RunOnlyRegressionTest):
     num_tasks_per_node = 1
     num_gpus_per_node = 8
 
+    tags = {'production', 'singularity', 'craype'}
+
     @sanity_function
     def assert_gpus_found(self):
         num_gpus = sn.count(sn.findall(r'\s+Name\:\s+gfx90a', self.stdout))

@@ -7,6 +7,7 @@ site_configuration = {
             'descr': 'LUMI Cray EX Supercomputer',
             'hostnames': ['ln\d+-nmn', 'uan\d+-nmn.local', '\S+'],
             'modules_system': 'lmod',
+            'modules': ['LUMI'],
             'resourcesdir': '/projappl/%s/reframe_resources/' % project,
             'partitions': [
                 {
@@ -22,7 +23,7 @@ site_configuration = {
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
-                    'modules': ['LUMI', 'partition/L'],
+                    'modules': ['partition/L'],
                     'launcher': 'local'
                 },
                 {
@@ -46,7 +47,7 @@ site_configuration = {
                         'cpeGNU',
                     ],
                     'max_jobs': 100,
-                    'modules': ['LUMI', 'partition/C'],
+                    'modules': ['partition/C'],
                     'access': ['--partition small',
                                f'--account={project}'],
                     'resources': [
@@ -78,7 +79,7 @@ site_configuration = {
                         'cpeGNU',
                     ],
                     'max_jobs': 100,
-                    'modules': ['LUMI', 'partition/C'],
+                    'modules': ['partition/C'],
                     'access': ['--partition standard',
                                f'--account={project}'],
                     'resources': [
@@ -111,7 +112,7 @@ site_configuration = {
                         'cpeGNU',
                     ],
                     'max_jobs': 10,
-                    'modules': ['LUMI', 'partition/G'],
+                    'modules': ['partition/G'],
                     'access': ['--partition small-g',
                                f'--account={project}'],
                     'resources': [

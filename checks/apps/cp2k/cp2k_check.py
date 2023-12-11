@@ -42,3 +42,4 @@ class lumi_cp2k_cpu_check(cp2k_check):
     num_tasks = 256
     num_tasks_per_node = 128
 
+    tags = {'contrib/22.08', 'contrib/22.12'}

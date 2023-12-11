@@ -174,6 +174,8 @@ class lumi_amber_check(amber_nve20_check):
         },
     }
 
+    tags = {'contrib/22.08'}
+
     @run_after('init')
     def scope_systems(self):
         valid_systems = {

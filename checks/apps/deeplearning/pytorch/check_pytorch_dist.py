@@ -11,7 +11,7 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     num_tasks = 32
     num_tasks_per_node = 8
     num_gpus_per_node = 8
-    variables = {
+    env_vars = {
         'NCCL_DEBUG': 'INFO',
         'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
         'NCCL_NET_GDR_LEVEL': '3',
@@ -57,6 +57,8 @@ class pytorch_distr_cnn(pytorch_distr_cnn_base):
     modules = ['PyTorch']
     executable = 'python cnn_distr.py'
 
+    tags = {'python', 'contrib/22.08'}
+
     # @sanity_function
     # def assert_job_is_complete(self):
     #     return sn.all([
@@ -74,6 +76,8 @@ class pytorch_distr_cnn_singularity(pytorch_distr_cnn_base):
     # pip install datasets transformers python-hostlist
     descr = 'Check the training throughput of a cnn with torch.distributed'
 
+    tags = {'singularity', 'python'}
+
     @run_before('run')
     def set_container_variables(self):
         self.container_platform = 'Singularity'
@@ -89,6 +93,8 @@ class pytorch_distr_cnn_singularity(pytorch_distr_cnn_base):
 class pytorch_distr_cnn_singularity_aws(pytorch_distr_cnn_singularity):
     modules = ['singularity-bindings', 'aws-ofi-rccl']
 
+    tags = {'singularity'}
+
     @run_before('run')
     def set_container_variables(self):
         super().set_container_variables()
@@ -98,7 +104,7 @@ class pytorch_distr_cnn_singularity_aws(pytorch_distr_cnn_singularity):
             ('$EBROOTRCCL/lib/librccl.so.1.0',
              '/opt/rocm-5.0.1/rccl/lib/librccl.so.1.0.50001')
         ]
-        self.variables.update({
+        self.env_vars.update({
             'SINGULARITYENV_LD_LIBRARY_PATH': (
                 '/opt/ompi/lib:'
                 '${EBROOTAWSMINOFIMINRCCL}/lib:'

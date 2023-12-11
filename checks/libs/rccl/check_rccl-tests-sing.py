@@ -190,9 +190,11 @@ class rccl_tests_allreduce(rccl_test_base):
         }
     }
 
+    tags = {'singularity', 'contrib/22.06', 'contrib/22.08'}
+
     @run_after('init')
     def set_variables(self):
-        self.variables = {
+        self.env_vars = {
             'NCCL_DEBUG': 'INFO',
             'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
             'NCCL_NET_GDR_LEVEL': '3',
