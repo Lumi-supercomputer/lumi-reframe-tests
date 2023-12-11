@@ -82,7 +82,7 @@ class deepspeed_bert_qa_train(deepspeed_bert_qa_train_base):
     modules = ['DeepSpeed']
     bert_cache = fixture(bert_fetch_data_tokenizer, scope='session')
 
-    tags = {'singularity', 'contrib/22.08'}
+    tags = {'python', 'contrib/22.08'}
 
     @run_before('run')
     def prepare_job(self):
@@ -135,7 +135,7 @@ class deepspeed_bert_qa_train_singularity(deepspeed_bert_qa_train_base):
             *self.executable_opts,
             '--bert-cache-dir /bert_cache_dir/cache'
         ])
-        self.variables.update({
+        self.env_vars.update({
             'HF_HOME': os.path.join(bert_cache_dir, 'huggingface_home')
         })
 
