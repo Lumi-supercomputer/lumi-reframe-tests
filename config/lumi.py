@@ -103,13 +103,13 @@ site_configuration = {
                     ],
                     'environs': [
                         'builtin',
-                        'builtin-hip',
                         'PrgEnv-amd',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'cpeAMD',
                         'cpeCray',
                         'cpeGNU',
+                        'ROCm',
                     ],
                     'max_jobs': 10,
                     'modules': ['partition/G'],
@@ -172,14 +172,14 @@ site_configuration = {
             'modules': ['cpeGNU']
         },
         {
-            'name': 'builtin-hip',
+            'name': 'ROCm',
             'cc': 'hipcc',
             'cxx': 'hipcc',
             'ftn': '',
-            'cflags': ['-I$MPICH_DIR/include'],
-            'ldflags': ['-L$MPICH_DIR/lib', '-lmpi', '-L$CRAY_MPICH_ROOTDIR/gtl/lib/', '-lmpi_gtl_hsa'],
+            #'cflags': 
+            #'ldflags': 
             'cppflags': ['-D__HIP_PLATFORM_AMD__'],
-            'modules': ['rocm', 'craype-accel-amd-gfx90a'],
+            'modules': ['rocm'],
             'target_systems': ['lumi:gpu']
         }
     ],

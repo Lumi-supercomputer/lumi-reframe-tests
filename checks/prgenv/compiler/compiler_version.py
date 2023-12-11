@@ -39,7 +39,7 @@ class FCompilerVersion(rfm.RegressionTest):
 class HIPCompilerVersion(rfm.RegressionTest):
     descr = 'Checks for HIP compiler version executed by hipcc command'
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['builtin-hip']
+    valid_prog_environs = ['ROCm']
     build_system = 'SingleSource'
     sourcepath = 'cc_version.c'
 
