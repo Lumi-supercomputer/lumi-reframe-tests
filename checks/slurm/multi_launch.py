@@ -15,6 +15,8 @@ class MultiLaunchTest(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def pre_launch(self):
+        if self.current_partition.name == 'small':
+           self.job.options += ['--network=no_vni'] 
         cmd = self.job.launcher.run_command(self.job)
         background_cmd = 'hostname'
         self.prerun_cmds = [
