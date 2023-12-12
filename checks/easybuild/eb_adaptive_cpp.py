@@ -15,8 +15,8 @@ class AdaptiveCpp_EBCheck(rfm.RegressionTest):
 
     @run_before('compile')
     def setup_build_system(self):
-        self.build_system.easyconfigs = ['/project/project_462000002/maciszpin/LUMI-EasyBuild-contrib/easybuild/easyconfigs/a/AdaptiveCpp/AdaptiveCpp-23.10.0-cpeGNU-22.12-rocm-5.2.3.eb']
-        self.build_system.options = ['-f']
+        self.build_system.easyconfigs = ['AdaptiveCpp-23.10.0-cpeGNU-22.12-rocm-5.2.3.eb']
+        self.build_system.options = ['-f --pr-target-account=mszpindler --from-pr 1']
 
     @run_before('run')
     def prepare_run(self):
