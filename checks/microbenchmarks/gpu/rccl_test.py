@@ -6,26 +6,23 @@ from reframe.utility.osext import cray_cdt_version
 
 @rfm.simple_test
 class rccl_test(rfm.RegressionTest):
-    #COMPILATION
     descr = 'Compile and run rccl-test'
     build_system = 'CMake'
     repo_name = 'rccl-tests'
-
-    #RUN
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['builtin']
-    modules = ['LUMI/22.12','partition/G', 'cpeGNU', 'rocm', 'cray-mpich', 'buildtools/22.12', 'aws-ofi-rccl']
+    valid_prog_environs = ['cpeGNU']
+    modules =['LUMI/22.12','partition/G','rocm', 'buildtools/22.12', 'aws-ofi-rccl']
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
     executable_opts = ['-b 8', '-e 128M', '-f 2', '-g 1']
     executable = 'build/all_reduce_perf'
-    #prebuild_cmds = ['module list', 'env']
+    exclusive_access = True
 
     reference = {
         'lumi:gpu': {
-            'busbw': (70.00, -0.05, None, 'GB/s'),
-            'algbw': (40.00, -0.05, None, 'GB/s'),
+            'busbw': (85.00, -0.05, None, 'GB/s'),
+            'algbw': (45.00, -0.05, None, 'GB/s'),
         }
     }
 
@@ -33,8 +30,7 @@ class rccl_test(rfm.RegressionTest):
     def set_compiler_flags(self):
         self.sourcesdir = f'https://github.com/ROCmSoftwarePlatform/{self.repo_name}'
         self.build_system.builddir = 'build'
-        self.build_system.config_opts = ['--fresh', '-DMPI_MPICXX=CC', '-DCMAKE_CXX_COMPILER=hipcc', '-DCMAKE_CXX_FLAGS="--offload-arch=gfx90a --amdgpu-target=gfx90a"','-DGPU_TARGETS=gfx90a', '-DMPI_PATH=$CRAY_MPICH_DIR']
-        #self.build_system.flags_from_environ = False
+        self.build_system.config_opts = ['--fresh', '-DMPI_MPICXX=CC', '-DCMAKE_CXX_COMPILER=hipcc', '-DCMAKE_CXX_FLAGS="--offload-arch=gfx90a --amdgpu-target=gfx90a --gcc-toolchain=$GCC_PATH/snos"','-DGPU_TARGETS=gfx90a', '-DMPI_PATH=$CRAY_MPICH_DIR', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa"']
         self.build_system.make_opts = ['VERBOSE=1', '-j8']
 
     @run_after('init')
@@ -43,7 +39,12 @@ class rccl_test(rfm.RegressionTest):
             'NCCL_DEBUG': 'INFO',
             'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
             'NCCL_NET_GDR_LEVEL': '3',
+            'MPICH_GPU_SUPPORT_ENABLED': '1',
         }
+    
+    @run_before('run')
+    def set_cpu_binding(self):
+         self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
 
     @sanity_function
     def check_last_line(self):
