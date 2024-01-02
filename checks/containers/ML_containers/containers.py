@@ -16,6 +16,7 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
     def set_launch_settings(self):
         self.env_vars = {
             'Nodes':'2',
+            'NCCL_NET_GDR_LEVEL':'3',
             'SINGULARITY_BIND':'/var/spool/slurmd:/var/spool/slurmd,'
                                 '/opt/cray:/opt/cray,'
                                 '/usr/lib64/libcxi.so.1:/usr/lib64/libcxi.so.1,'
