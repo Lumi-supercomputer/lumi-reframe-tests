@@ -6,11 +6,9 @@ import reframe.utility.sanity as sn
 class HeCBench_heat(rfm.RegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeGNU', 'cpeAMD']
-    modules = ['rocm', 'AdaptiveCpp']
+    modules = ['AdaptiveCpp']
     num_gpus_per_node = 1
     build_system = 'Make'
-    #sourcesdir = 'https://github.com/zjin-lcf/HeCBench.git --depth=1'
-    #sourcepath = 'src/heat-sycl' 
 
     maintainers = ['mszpindler']
     tags = {'contrib/23.09'}
@@ -24,16 +22,15 @@ class HeCBench_heat(rfm.RegressionTest):
 
     @run_before('compile')
     def set_make_flags(self):
-         #self.prebuild_cmds = ['cd src/heat-sycl']
          self.prebuild_cmds = [
              'curl -LJO https://raw.githubusercontent.com/zjin-lcf/HeCBench/master/src/heat-sycl/heat.cpp',
              'curl -LJO https://raw.githubusercontent.com/zjin-lcf/HeCBench/master/src/heat-sycl/Makefile',
          ]
-         self.build_system.options = ['CC=acpp HIP=yes HIP_ARCH=gfx90a CFLAGS="-std=c++17 -Wall -fsycl --acpp-targets=hip:gfx90a --offload-arch=gfx90a -O3 -DUSE_GPU"']
+         self.build_system.flags_from_environ= False
+         self.build_system.options = ['CC=acpp HIP=yes HIP_ARCH=gfx90a CFLAGS="-std=c++17 -Wall --acpp-targets=hip:gfx90a -O3 -DUSE_GPU"']
 
     @run_before('run')
     def set_executable(self):
-         #self.executable = 'src/heat-sycl/heat'
          self.executable = './heat'
          self.executable_opts = ['4096 1000']
 
