@@ -8,7 +8,7 @@ class lumi_gromacs_pep_h(gromacs_check):
     # Here purpose of second and third parameters changes to total energy 
     # at step 0 and energy drift; tolerances are now in readout functions
     benchmark_info = parameter([
-        ('benchPEP-h', [-1.43526e+08,1.27e-04], [0.001, 0.1]), 
+        ('benchPEP-h', [-1.43526e+08,7.50e-05], [0.001, 0.033]), 
     ], fmt=lambda x: x[0], loggable=True)
     update_mode = parameter(['gpu', 'cpu'])
     nb_impl = parameter(['gpu'])
@@ -17,7 +17,7 @@ class lumi_gromacs_pep_h(gromacs_check):
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
-    num_nodes = parameter([1,2], loggable=True)
+    num_nodes = parameter([2, 4], loggable=True)
     num_gpus_per_node = 8
     time_limit = '15m'
     valid_systems = ['lumi:gpu']
@@ -34,7 +34,15 @@ class lumi_gromacs_pep_h(gromacs_check):
         },
         2: {
             'gpu': { # update=gpu, gpu resident mode
-                'benchPEP-h': (13.2, -0.05, 0.05, 'ns/day'),
+                'benchPEP-h': (13.2, -0.075, 0.075, 'ns/day'),
+            },
+            'cpu': { # update=cpu, force offload mode
+                'benchPEP-h': (9.5, -0.05, 0.05, 'ns/day'),
+            },
+        },
+        4: {
+            'gpu': { # update=gpu, gpu resident mode
+                'benchPEP-h': (13.2, -0.05, None, 'ns/day'),
             },
             'cpu': { # update=cpu, force offload mode
                 'benchPEP-h': (9.5, -0.05, 0.05, 'ns/day'),
@@ -100,7 +108,7 @@ class lumi_gromacs_pep_h(gromacs_check):
                 self.skip('FFT library variant not defined')
 
         self.executable_opts += [
-            '-nsteps 10000',
+            '-nsteps 20000',
             '-nstlist 400',
             '-noconfout',
             '-nb', self.nb_impl,
@@ -144,8 +152,8 @@ class lumi_gromacs_pep_h(gromacs_check):
     def setup_nb(self):
         valid_systems = {
             'heffte': {
-                1: ['lumi:gpu'],
                 2: ['lumi:gpu'],
+                4: ['lumi:gpu'],
             },
             'vkfft': {
                 1: ['lumi:gpu'],
@@ -196,5 +204,3 @@ class lumi_gromacs_pep_h(gromacs_check):
         }
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
 
-#@rfm.simple_test
-#class lumi_gromacs_stmv(gromacs_check):
