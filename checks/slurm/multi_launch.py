@@ -6,6 +6,7 @@ from reframe.core.backends import getlauncher
 class MultiLaunchTest(rfm.RunOnlyRegressionTest):
     valid_systems = ['lumi:gpu', 'lumi:small']
     valid_prog_environs = ['builtin']
+    modules = ['lumi-CPEtools']
     executable = 'wait'
     num_tasks_per_node = 3
     num_nodes = 3
@@ -15,12 +16,13 @@ class MultiLaunchTest(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def pre_launch(self):
-        if self.current_partition.name == 'small':
-           self.job.options += ['--network=no_vni'] 
+        #if self.current_partition.name == 'small':
+        #   self.job.options += ['--network=no_vni'] 
+        self.job.options += ['--ntasks-per-core=1', '--hint=""']
         cmd = self.job.launcher.run_command(self.job)
-        background_cmd = 'hostname'
+        background_cmd = 'hybrid_check'
         self.prerun_cmds = [
-            f'{cmd} --overlap -N {self.num_nodes} -n {self.num_tasks_per_node} {background_cmd} &'
+            f'{cmd} --exact --cpu-bind=threads -N {self.num_nodes} -n {self.num_tasks_per_node} {background_cmd} &'
             for n in range(1, self.num_nodes+1)
         ]
 
