@@ -14,7 +14,8 @@ class lumi_gromacs_stmv(gromacs_check):
     # Purpose of a second and a third parameter changes to a total energy 
     # at step 0 and energy drift; tolerances are now in readout functions
     benchmark_info = parameter([
-        ('stmv', [-1.45939e+07, 1.40e-03], [0.001, 0.1]), 
+        ('stmv_v1', [-1.45939e+07, 1.40e-03], [0.001, 0.1]), 
+        ('stmv_v2', [-1.46491e+07, 2.69e-05], [0.001, 0.1]), 
     ], fmt=lambda x: x[0], loggable=True)
     update_mode = parameter(['gpu', 'cpu'])
     nb_impl = parameter(['gpu'])
@@ -32,18 +33,22 @@ class lumi_gromacs_stmv(gromacs_check):
     allref = {
         1: {
             'gpu': { # update=gpu, gpu resident mode
-                'stmv': (58.6, -0.05, None, 'ns/day'),
+                'stmv_v1': (58.6, -0.05, None, 'ns/day'),
+                'stmv_v2': (58.6, -0.05, None, 'ns/day'),
             },
             'cpu': { # update=cpu, force offload mode
-                'stmv': (42.3, -0.05, None, 'ns/day'),
+                'stmv_v1': (42.3, -0.05, None, 'ns/day'),
+                'stmv_v2': (42.3, -0.05, None, 'ns/day'),
             },
         },
         2: {
             'gpu': { # update=gpu, gpu resident mode
-                'stmv': (76.9, -0.05, None, 'ns/day'),
+                'stmv_v1': (76.9, -0.05, None, 'ns/day'),
+                'stmv_v2': (76.9, -0.05, None, 'ns/day'),
             },
             'cpu': { # update=cpu, force offload mode
-                'stmv': (62.6, -0.05, None, 'ns/day'),
+                'stmv_v1': (62.6, -0.05, None, 'ns/day'),
+                'stmv_v2': (62.6, -0.05, None, 'ns/day'),
             },
         },
     }
@@ -89,13 +94,9 @@ class lumi_gromacs_stmv(gromacs_check):
         self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
         self.descr = f'GROMACS {self.__bench} STMV GPU benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})'
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
-                                       'gromacs-benchmarks', 
-                                       'zenodo.org', 
-                                       'doi',
-                                       '10.5281',
-                                       'zenodo.3893788',
-                                       'GROMACS_heterogeneous_parallelization_benchmark_info_and_systems_JCP', 
-                                       self.__bench, 'topol.tpr')
+                                      'gromacs-benchmarks', 
+                                       self.__bench, 
+                                      'topol.tpr')
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
@@ -132,8 +133,8 @@ class lumi_gromacs_stmv(gromacs_check):
             'OMP_NUM_THREADS': '7',
             'OMP_PROC_BIND': 'close',
             'OMP_PLACES': 'cores',
-            'OMP_DISPLAY_ENV': '1',
-            'OMP_DISPLAY_AFFINITY': 'TRUE',
+            #'OMP_DISPLAY_ENV': '1',
+            #'OMP_DISPLAY_AFFINITY': 'TRUE',
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
             'GMX_GPU_PME_DECOMPOSITION': '1',
