@@ -48,6 +48,8 @@ class lumi_gromacs_stmv(gromacs_check):
         },
     }
 
+    tags = {'benchmark', 'contrib/22.12'}
+
     @loggable
     @property
     def bench_name(self):
