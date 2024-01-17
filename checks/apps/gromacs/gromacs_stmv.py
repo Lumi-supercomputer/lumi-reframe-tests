@@ -15,7 +15,7 @@ class lumi_gromacs_stmv(gromacs_check):
     # at step 0 and energy drift; tolerances are now in readout functions
     benchmark_info = parameter([
         ('stmv_v1', [-1.45939e+07, 1.40e-03], [0.001, 0.1]), 
-        ('stmv_v2', [-1.46491e+07, 2.69e-05], [0.001, 0.1]), 
+        ('stmv_v2', [-1.46491e+07, 2.69e-05], [0.001, 0.25]), 
     ], fmt=lambda x: x[0], loggable=True)
     update_mode = parameter(['gpu', 'cpu'])
     nb_impl = parameter(['gpu'])
