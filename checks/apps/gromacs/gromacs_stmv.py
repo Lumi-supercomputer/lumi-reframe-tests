@@ -3,8 +3,16 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 
+# This is based on CSCS Reframe GROMACS tests library.
+# The test uses STMV benchmark (https://doi.org/10.5281/zenodo.3893789),
+# with a different GPU acceleration modes (update: gpu resident and gpu offload; bonded and non-bonded interactions on gpu),
+# evalutes performance of a single node configuration with heFFTe and VkFFT libraries and a two-node with heFFTe only,
+# checks for a total energy on step 0 and conserved energy drift against reference values.    
+
 @rfm.simple_test
 class lumi_gromacs_stmv(gromacs_check):
+    # Purpose of a second and a third parameter changes to a total energy 
+    # at step 0 and energy drift; tolerances are now in readout functions
     benchmark_info = parameter([
         ('stmv', [-1.45939e+07, 1.40e-03], [0.001, 0.1]), 
     ], fmt=lambda x: x[0], loggable=True)
@@ -77,7 +85,7 @@ class lumi_gromacs_stmv(gromacs_check):
     @run_after('init')
     def prepare_test(self):
         self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
-        self.descr = f'GROMACS {self.__bench} GPU benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})'
+        self.descr = f'GROMACS {self.__bench} STMV GPU benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})'
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                        'gromacs-benchmarks', 
                                        'zenodo.org', 
