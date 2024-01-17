@@ -11,8 +11,9 @@ from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 
 @rfm.simple_test
 class lumi_gromacs_stmv(gromacs_check):
-    # Purpose of a second and a third parameter changes to a total energy 
-    # at step 0 and energy drift; tolerances are now in readout functions
+    # benchmark_info parameter here encodes: 
+    #       benchmark name; reference value of a total energy at step 0 and conserved energy drift; tolerance threshold
+    #       for these two values respectively.
     benchmark_info = parameter([
         ('stmv_v1', [-1.45939e+07, 1.40e-03], [0.001, 0.1]), 
         ('stmv_v2', [-1.46491e+07, 2.69e-05], [0.001, 0.25]), 
