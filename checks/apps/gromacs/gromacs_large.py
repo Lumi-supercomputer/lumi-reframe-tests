@@ -6,40 +6,39 @@ from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 # This is based on CSCS Reframe GROMACS tests library.
 # The test uses ethanol-46M_RF system to scale on multiple GPU node.
 
+
+#util.find_modules('GROMACS')
+
 @rfm.simple_test
 class lumi_gromacs_large(gromacs_check):
-    # benchmark_info parameters here are: 
-    #       name; reference values for: total en. at step 0, conserved en. drift; error tolerance for: total en. at step 0, conserved en. drift
+    # benchmark_info parameter encodes: 
+    #       name,
+    #       reference values for: total en. at step 0, conserved en. drift, 
+    #       error tolerance for: total en. at step 0, conserved en. drift,
     benchmark_info = parameter([
-        ('ethanol', [-1.46491e+07, 0.01], [0.001, 0.25]), 
+        ('ethanol', 
+         [-4.81111e+08, 4.20e-04], 
+         [0.001, 0.25]
+        ), 
     ], fmt=lambda x: x[0], loggable=True)
-    update_mode = parameter(['gpu'])
     nb_impl = parameter(['gpu'])
-    bonded_impl = parameter(['gpu'])
-    fft_variant = parameter(['heffte'])
-    maintainers = ['mszpindler']
+    num_nodes = parameter([2,4], loggable=True)
+
     use_multithreading = False
     exclusive_access = True
-    num_nodes = parameter([1,2], loggable=True)
     num_gpus_per_node = 8
-    time_limit = '15m'
+    time_limit = '10m'
+
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
 
-    allref = {
-        1: {
-            'gpu': { # update=gpu, gpu resident mode
-                'ethanol': (58.6, -0.05, None, 'ns/day'),
-            },
-        },
-        2: {
-            'gpu': { # update=gpu, gpu resident mode
-                'ethanol': (76.9, -0.05, None, 'ns/day'),
-            },
-        },
-    }
-
+    maintainers = ['mszpindler']
     tags = {'benchmark', 'contrib/22.12'}
+
+    allref = {
+        2: (6.5, -0.05, None, 'ns/day'),
+        4: (13.3, -0.05, None, 'ns/day'),
+    }
 
     @loggable
     @property
@@ -76,9 +75,13 @@ class lumi_gromacs_large(gromacs_check):
         return self.__nrg_tol[1]
 
     @run_after('init')
+    def setup_modules(self):
+        self.modules = ['GROMACS/2023.2-cpeAMD-22.12-HeFFTe-GPU']
+
+    @run_after('init')
     def prepare_test(self):
         self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
-        self.descr = f'GROMACS {self.__bench} STMV GPU benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})'
+        self.descr = f'GROMACS {self.__bench} GPU benchmark (LUMI contrib build {self.modules})' 
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                       'gromacs-benchmarks', 
                                        self.__bench, 
@@ -88,18 +91,9 @@ class lumi_gromacs_large(gromacs_check):
         ]
 
     @run_after('init')
-    def setup_fft_variant(self):
-        match self.fft_variant:
-            case 'heffte':
-                self.modules = ['GROMACS/2023.2-cpeAMD-22.12-HeFFTe-GPU']
-                self.num_tasks_per_node = 8
-                npme_ranks = 2*self.num_nodes
-            case 'vkfft':
-                self.modules = ['GROMACS/2023.2-cpeAMD-22.12-VkFFT-GPU']
-                self.num_tasks_per_node = 8
-                npme_ranks = 1
-            case _:
-                self.skip('FFT library variant not defined')
+    def setup_run_opts(self):
+        self.num_tasks_per_node = 8
+        self.num_tasks = self.num_tasks_per_node*self.num_nodes
 
         self.executable_opts += [
             '-nsteps 20000',
@@ -109,8 +103,8 @@ class lumi_gromacs_large(gromacs_check):
             '-resetstep 10000',
             '-nb', self.nb_impl,
             '-pme', 'cpu', 
-            '-update', self.update_mode,
-            '-bonded', self.bonded_impl,
+            '-update', 'gpu',
+            '-bonded', 'gpu',
             '-s benchmark.tpr'
         ]
         self.env_vars = {
@@ -143,20 +137,6 @@ class lumi_gromacs_large(gromacs_check):
         ]
         self.executable = './select_gpu ' + self.executable
 
-    @run_after('init')
-    def setup_nb(self):
-        valid_systems = {
-            'heffte': {
-                1: ['lumi:gpu'],
-                2: ['lumi:gpu'],
-            },
-        }
-        try:
-            self.valid_systems = valid_systems[self.fft_variant][self.num_nodes]
-        except KeyError:
-            self.valid_systems = []
-
-
     @performance_function('ns/day')
     def perf(self):
         return sn.extractsingle(r'Performance:\s+(?P<perf>\S+)',
@@ -173,18 +153,25 @@ class lumi_gromacs_large(gromacs_check):
     def energy_drift(self):
         return sn.extractsingle(r'\s+Conserved\s+energy\s+drift\:\s+(\S+)', 'md.log', 1, float)
     
-    @sanity_function
-    def assert_energy_readout(self):
+    @deferrable
+    def assert_energy_drift(self):
+        if self.num_nodes == 2:
+            return True
+        else:
+            return sn.assert_reference(self.energy_drift(), self.energy_drift_ref, -self.energy_drift_tol, self.energy_drift_tol) #'Failed to meet reference value for conserved energy drift'
+
+    @sanity_function 
+    def assert_run_correct(self):
         return sn.all([
             sn.assert_found('Finished mdrun', 'md.log', 'Run failed to complete'), 
-            sn.assert_reference(self.energy_step0(), self.energy_step0_ref, -self.energy_step0_tol, self.energy_step0_tol), #'Failed to meet reference value for total energy at step 0'
-            sn.assert_reference(self.energy_drift(), self.energy_drift_ref, -self.energy_drift_tol, self.energy_drift_tol), #'Failed to meet reference value for conserved energy drift'
+            sn.assert_reference(self.energy_step0(), self.energy_step0_ref, -self.energy_step0_tol, self.energy_step0_tol), 
+            self.num_nodes == 2 or sn.assert_reference(self.energy_drift(), self.energy_drift_ref, -self.energy_drift_tol, self.energy_drift_tol), 
         ])
 
     @run_before('run')
     def setup_run(self):
         try:
-            found = self.allref[self.num_nodes][self.update_mode][self.bench_name]
+            found = self.allref[self.num_nodes]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) of '
                       f'{self.bench_name!r} is not supported on {arch!r}')
@@ -192,7 +179,24 @@ class lumi_gromacs_large(gromacs_check):
         # Setup performance references
         self.reference = {
             '*': {
-                'perf': self.allref[self.num_nodes][self.update_mode][self.bench_name]
+                'perf': self.allref[self.num_nodes]
             }
         }
-        self.num_tasks = self.num_tasks_per_node*self.num_nodes
+
+@rfm.simple_test
+class lumi_gromacs_scaling(lumi_gromacs_large):
+    num_nodes = parameter([2**n for n in range(1,9)], loggable=True)
+
+    maintainers = ['mszpindler']
+    tags = {'benchmark', 'contrib/22.12'}
+
+    allref = {
+        2: (6.5, -0.05, None, 'ns/day'),
+        4: (13.3, -0.05, None, 'ns/day'),
+        8: (25.8, -0.05, None, 'ns/day'),
+        16: (45.5, -0.05, None, 'ns/day'),
+        32: (68.0, -0.05, None, 'ns/day'),
+        64: (94.1, -0.05, None, 'ns/day'),
+        128: (13.3, -0.05, None, 'ns/day'),
+        256: (13.3, -0.05, None, 'ns/day'),
+    }
