@@ -197,6 +197,6 @@ class lumi_gromacs_scaling(lumi_gromacs_large):
         16: (45.5, -0.05, None, 'ns/day'),
         32: (68.0, -0.05, None, 'ns/day'),
         64: (94.1, -0.05, None, 'ns/day'),
-        128: (13.3, -0.05, None, 'ns/day'),
+        128: (112.1, -0.05, None, 'ns/day'),
         256: (13.3, -0.05, None, 'ns/day'),
     }
