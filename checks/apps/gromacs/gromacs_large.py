@@ -31,6 +31,7 @@ class lumi_gromacs_large(gromacs_check):
 
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
+    modules = ['GROMACS/2023.3-cpeAMD-22.12-HeFFTe-GPU']
 
     maintainers = ['mszpindler']
     tags = {'benchmark', 'contrib/22.12'}
@@ -74,9 +75,6 @@ class lumi_gromacs_large(gromacs_check):
     def energy_drift_tol(self):
         return self.__nrg_tol[1]
 
-    @run_after('init')
-    def setup_modules(self):
-        self.modules = ['GROMACS/2023.2-cpeAMD-22.12-HeFFTe-GPU']
 
     @run_after('init')
     def prepare_test(self):
