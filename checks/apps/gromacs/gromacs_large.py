@@ -96,7 +96,7 @@ class lumi_gromacs_large(gromacs_check):
         self.executable_opts += [
             '-nsteps -1',
             '-maxh 0.15',
-            '-nstlist 400',
+            '-nstlist 200',
             '-noconfout',
             '-notunepme',
             '-resetstep 10000',
