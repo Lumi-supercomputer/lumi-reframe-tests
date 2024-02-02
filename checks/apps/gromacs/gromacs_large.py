@@ -94,7 +94,8 @@ class lumi_gromacs_large(gromacs_check):
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
 
         self.executable_opts += [
-            '-nsteps 20000',
+            '-nsteps -1',
+            '-maxh 0.15',
             '-nstlist 400',
             '-noconfout',
             '-notunepme',
