@@ -16,7 +16,7 @@ class lumi_gromacs_stmv(gromacs_check):
     #       for these two values respectively.
     benchmark_info = parameter([
         ('stmv_v1', [-1.45939e+07, 1.40e-03], [0.001, 0.1]), 
-        ('stmv_v2', [-1.46491e+07, 2.69e-05], [0.001, 0.25]), 
+        ('stmv_v2', [-1.46491e+07, 2.59e-05], [0.001, 0.25]), 
     ], fmt=lambda x: x[0], loggable=True)
     update_mode = parameter(['gpu', 'cpu'])
     nb_impl = parameter(['gpu'])
@@ -106,18 +106,19 @@ class lumi_gromacs_stmv(gromacs_check):
     def setup_fft_variant(self):
         match self.fft_variant:
             case 'heffte':
-                self.modules = ['GROMACS/2023.2-cpeAMD-22.12-HeFFTe-GPU']
+                self.modules = ['GROMACS/2023.3-cpeAMD-22.12-HeFFTe-GPU']
                 self.num_tasks_per_node = 8
                 npme_ranks = 2*self.num_nodes
             case 'vkfft':
-                self.modules = ['GROMACS/2023.2-cpeAMD-22.12-VkFFT-GPU']
+                self.modules = ['GROMACS/2023.3-cpeAMD-22.12-VkFFT-GPU']
                 self.num_tasks_per_node = 8
                 npme_ranks = 1
             case _:
                 self.skip('FFT library variant not defined')
 
         self.executable_opts += [
-            '-nsteps 20000',
+            '-nsteps -1',
+            '-maxh 0.0115',
             '-nstlist 400',
             '-noconfout',
             '-notunepme',
@@ -139,7 +140,7 @@ class lumi_gromacs_stmv(gromacs_check):
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
             'GMX_GPU_PME_DECOMPOSITION': '1',
-            'GMX_PMEONEDD': '1'
+            'GMX_PMEONEDD': '1',
         }
 
     @run_before('run')
