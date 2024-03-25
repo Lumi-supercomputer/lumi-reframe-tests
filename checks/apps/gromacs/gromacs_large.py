@@ -31,7 +31,7 @@ class lumi_gromacs_large(gromacs_check):
 
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
-    modules = ['GROMACS/2023.3-cpeAMD-22.12-HeFFTe-GPU']
+    modules = ['GROMACS/2024.1-cpeAMD-23.09-HeFFTe-2.4-hipSYCL-0.9.4-rocm-5.4.6']
 
     maintainers = ['mszpindler']
     tags = {'benchmark', 'contrib/22.12'}
@@ -79,7 +79,7 @@ class lumi_gromacs_large(gromacs_check):
     @run_after('init')
     def prepare_test(self):
         self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
-        self.descr = f'GROMACS {self.__bench} GPU benchmark (LUMI contrib build {self.modules})' 
+        self.descr = f'{self.modules}' 
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                       'gromacs-benchmarks', 
                                        self.__bench, 
