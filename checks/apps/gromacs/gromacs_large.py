@@ -23,6 +23,8 @@ class lumi_gromacs_large(gromacs_check):
     ], fmt=lambda x: x[0], loggable=True)
     nb_impl = parameter(['gpu'])
     num_nodes = parameter([2,4], loggable=True)
+    
+    hipsycl_rt_max_cached_nodes = parameter([0, 5, 100], loggable=True)
 
     use_multithreading = False
     exclusive_access = True
@@ -111,12 +113,11 @@ class lumi_gromacs_large(gromacs_check):
             'OMP_NUM_THREADS': '7',
             'OMP_PROC_BIND': 'close',
             'OMP_PLACES': 'cores',
-            #'OMP_DISPLAY_ENV': '1',
-            #'OMP_DISPLAY_AFFINITY': 'TRUE',
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
             'GMX_GPU_PME_DECOMPOSITION': '1',
-            'GMX_PMEONEDD': '1'
+            'GMX_PMEONEDD': '1',
+            'HIPSYCL_RT_MAX_CACHED_NODES': f'{self.hipsycl_rt_max_cached_nodes}',
         }
 
     @run_before('run')
