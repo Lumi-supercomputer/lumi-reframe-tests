@@ -24,6 +24,8 @@ class lumi_gromacs_large(gromacs_check):
     nb_impl = parameter(['gpu'])
     num_nodes = parameter([2,4], loggable=True)
 
+    hipsycl_rt_max_cached_nodes = parameter([0, 5, 100], loggable=True)
+
     use_multithreading = False
     exclusive_access = True
     num_gpus_per_node = 8
@@ -116,7 +118,8 @@ class lumi_gromacs_large(gromacs_check):
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
             'GMX_GPU_PME_DECOMPOSITION': '1',
-            'GMX_PMEONEDD': '1'
+            'GMX_PMEONEDD': '1',
+            'HIPSYCL_RT_MAX_CACHED_NODES': f'{self.hipsycl_rt_max_cached_nodes}',
         }
 
     @run_before('run')
@@ -184,12 +187,13 @@ class lumi_gromacs_large(gromacs_check):
 
 @rfm.simple_test
 class lumi_gromacs_scaling(lumi_gromacs_large):
-    num_nodes = parameter([2**n for n in range(1,9)], loggable=True)
+    num_nodes = parameter([2**n for n in range(0,9)], loggable=True)
 
     maintainers = ['mszpindler']
     tags = {'benchmark', 'contrib/22.12'}
 
     allref = {
+        1: (3.5, -0.05, None, 'ns/day'),
         2: (6.5, -0.05, None, 'ns/day'),
         4: (13.3, -0.05, None, 'ns/day'),
         8: (25.8, -0.05, None, 'ns/day'),

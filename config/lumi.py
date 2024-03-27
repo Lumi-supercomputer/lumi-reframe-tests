@@ -113,7 +113,7 @@ site_configuration = {
                     ],
                     'max_jobs': 10,
                     'modules': ['partition/G'],
-                    'access': ['--partition small-g',
+                    'access': ['--partition standard-g',
                                f'--account={project}'],
                     'resources': [
                         {
@@ -254,7 +254,9 @@ site_configuration = {
         {
             'check_search_path': ['checks/'],
             'check_search_recursive': True,
-            'remote_detect': False
+            'clean_stagedir': False,
+            'remote_detect': False,
+            'timestamp_dirs': '%Y%m%d-%H%M%s%z'
         }
     ]
 }
