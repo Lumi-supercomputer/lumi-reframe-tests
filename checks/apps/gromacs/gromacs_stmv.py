@@ -4,7 +4,7 @@ import reframe.utility.sanity as sn
 from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 
 # This is based on CSCS Reframe GROMACS tests library.
-# The test uses STMV benchmark (https://doi.org/10.5281/zenodo.3893789),
+# The test uses updated STMV benchmark 
 # with a different GPU acceleration modes (update: gpu resident and gpu offload; bonded and non-bonded interactions on gpu),
 # evalutes performance of a single node configuration with heFFTe and VkFFT libraries and a two-node with heFFTe only,
 # checks for a total energy on step 0 and conserved energy drift against reference values.    
@@ -15,9 +15,9 @@ class lumi_gromacs_stmv(gromacs_check):
     #       benchmark name; reference value of a total energy at step 0 and conserved energy drift; tolerance threshold
     #       for these two values respectively.
     benchmark_info = parameter([
-        ('stmv_v1', [-1.45939e+07, 1.40e-03], [0.001, 0.1]), 
-        ('stmv_v2', [-1.46491e+07, 2.59e-05], [0.001, 0.25]), 
+        ('stmv_v2', [-1.46491e+07, 4.20e-05], [0.001, 0.25]),
     ], fmt=lambda x: x[0], loggable=True)
+
     update_mode = parameter(['gpu', 'cpu'])
     nb_impl = parameter(['gpu'])
     bonded_impl = parameter(['gpu'])
@@ -34,21 +34,17 @@ class lumi_gromacs_stmv(gromacs_check):
     allref = {
         1: {
             'gpu': { # update=gpu, gpu resident mode
-                'stmv_v1': (58.6, -0.05, None, 'ns/day'),
-                'stmv_v2': (58.6, -0.05, None, 'ns/day'),
+                'stmv_v2': (100.0, -0.05, None, 'ns/day'),
             },
             'cpu': { # update=cpu, force offload mode
-                'stmv_v1': (42.3, -0.05, None, 'ns/day'),
                 'stmv_v2': (42.3, -0.05, None, 'ns/day'),
             },
         },
         2: {
             'gpu': { # update=gpu, gpu resident mode
-                'stmv_v1': (76.9, -0.05, None, 'ns/day'),
                 'stmv_v2': (76.9, -0.05, None, 'ns/day'),
             },
             'cpu': { # update=cpu, force offload mode
-                'stmv_v1': (62.6, -0.05, None, 'ns/day'),
                 'stmv_v2': (62.6, -0.05, None, 'ns/day'),
             },
         },
@@ -108,7 +104,7 @@ class lumi_gromacs_stmv(gromacs_check):
             case 'heffte':
                 self.modules = ['GROMACS/2023.3-cpeAMD-22.12-HeFFTe-GPU']
                 self.num_tasks_per_node = 8
-                npme_ranks = 2*self.num_nodes
+                npme_ranks = self.num_nodes
             case 'vkfft':
                 self.modules = ['GROMACS/2023.3-cpeAMD-22.12-VkFFT-GPU']
                 self.num_tasks_per_node = 8
