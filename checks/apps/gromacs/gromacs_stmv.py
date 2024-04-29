@@ -22,7 +22,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     exclusive_access = True
     num_nodes = parameter([1,2], loggable=True)
     num_gpus_per_node = 8
-    time_limit = '15m'
+    time_limit = '10m'
     nb_impl = parameter(['gpu'])
     update_mode = parameter(['gpu', 'cpu'])
     bonded_impl = parameter(['gpu'])
@@ -112,18 +112,6 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
             'chmod +x ./select_gpu'
         ]
         self.executable = './select_gpu ' + self.executable
-
-    @run_after('init')
-    def setup_nb(self):
-        valid_systems = {
-            1: ['lumi:gpu'],
-            2: ['lumi:gpu'],
-        }
-        try:
-            self.valid_systems = valid_systems[self.num_nodes]
-        except KeyError:
-            self.valid_systems = []
-
 
     @performance_function('ns/day')
     def perf(self):
