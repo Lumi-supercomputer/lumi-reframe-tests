@@ -1,42 +1,33 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
-from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
-
-# This is based on CSCS Reframe GROMACS tests library.
-# The test uses ethanol-46M_RF system to scale on multiple GPU node.
-
-
-#util.find_modules('GROMACS')
 
 @rfm.simple_test
-class lumi_gromacs_large(gromacs_check):
-    # benchmark_info parameter encodes: 
-    #       name,
-    #       reference values for: total en. at step 0, conserved en. drift, 
-    #       error tolerance for: total en. at step 0, conserved en. drift,
-    benchmark_info = parameter([
-        ('ethanol', 
-         [-4.81111e+08, 4.20e-04], 
-         [0.001, 0.25]
-        ), 
-    ], fmt=lambda x: x[0], loggable=True)
-    nb_impl = parameter(['gpu'])
-    num_nodes = parameter([2,4], loggable=True)
-    
-    hipsycl_rt_max_cached_nodes = parameter([0, 5, 100], loggable=True)
-
-    use_multithreading = False
-    exclusive_access = True
-    num_gpus_per_node = 8
-    time_limit = '10m'
+class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
+    '''The test uses ethanol-46M_RF system to scale on multiple GPU nodes.
+    '''
+    benchmark_info = {
+        'name': 'ethanol',
+        'energy_step0_ref': -4.81111e+08,
+        'energy_step0_tol': 0.001,
+    }
 
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
-    modules = ['GROMACS/2023.3-cpeAMD-22.12-HeFFTe-GPU']
-
+    # This needs to be driven externally
+    modules = ['GROMACS']
     maintainers = ['mszpindler']
-    tags = {'benchmark', 'contrib/22.12'}
+    use_multithreading = False
+    exclusive_access = True
+    num_nodes = parameter([2,4], loggable=True)
+    num_gpus_per_node = 8
+    time_limit = '10m'
+    nb_impl = parameter(['gpu'])
+    hipsycl_rt_max_cached_nodes = parameter([0, 5, 100], loggable=True)
+
+    executable = 'gmx_mpi mdrun'
+    tags = {'benchmark', 'contrib', 'gpu'}
+    keep_files = ['md.log']
 
     allref = {
         2: (6.5, -0.05, None, 'ns/day'),
@@ -80,11 +71,10 @@ class lumi_gromacs_large(gromacs_check):
 
     @run_after('init')
     def prepare_test(self):
-        self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
-        self.descr = f'GROMACS {self.__bench} GPU benchmark (LUMI contrib build {self.modules})' 
+        self.descr = f'GROMACS {self.benchmark_info['name']} GPU benchmark (LUMI contrib build {self.modules})' 
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                       'gromacs-benchmarks', 
-                                       self.__bench, 
+                                       self.benchmark_info['name'],
                                       'topol.tpr')
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
@@ -152,20 +142,25 @@ class lumi_gromacs_large(gromacs_check):
     @deferrable
     def energy_drift(self):
         return sn.extractsingle(r'\s+Conserved\s+energy\s+drift\:\s+(\S+)', 'md.log', 1, float)
-    
-    @deferrable
-    def assert_energy_drift(self):
-        if self.num_nodes == 2:
-            return True
-        else:
-            return sn.assert_reference(self.energy_drift(), self.energy_drift_ref, -self.energy_drift_tol, self.energy_drift_tol) #'Failed to meet reference value for conserved energy drift'
 
-    @sanity_function 
-    def assert_run_correct(self):
+    @deferrable
+    def verlet_buff_tol(self):
+        return sn.extractsingle(r'\s+verlet-buffer-tolerance\s+\=\s+(\S+)', 'md.log', 1, float)
+
+    @sanity_function
+    def assert_energy_readout(self):
         return sn.all([
             sn.assert_found('Finished mdrun', 'md.log', 'Run failed to complete'), 
-            sn.assert_reference(self.energy_step0(), self.energy_step0_ref, -self.energy_step0_tol, self.energy_step0_tol), 
-            self.num_nodes == 2 or sn.assert_reference(self.energy_drift(), self.energy_drift_ref, -self.energy_drift_tol, self.energy_drift_tol), 
+            sn.assert_reference(
+                self.energy_step0(),
+                self.benchmark_info['energy_step0_ref'],
+                -self.benchmark_info['energy_step0_tol'],
+                self.benchmark_info['energy_step0_tol']
+            ),
+            sn.assert_lt(
+                self.energy_drift(),
+                2*self.verlet_buff_tol()
+           ),
         ])
 
     @run_before('run')
@@ -188,7 +183,7 @@ class lumi_gromacs_scaling(lumi_gromacs_large):
     num_nodes = parameter([2**n for n in range(1,9)], loggable=True)
 
     maintainers = ['mszpindler']
-    tags = {'benchmark', 'contrib/22.12'}
+    tags = {'benchmark', 'gpu'}
 
     allref = {
         2: (6.5, -0.05, None, 'ns/day'),
