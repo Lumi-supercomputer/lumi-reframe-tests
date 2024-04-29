@@ -23,7 +23,6 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
     num_gpus_per_node = 8
     time_limit = '10m'
     nb_impl = parameter(['gpu'])
-    hipsycl_rt_max_cached_nodes = parameter([0, 5, 100], loggable=True)
 
     executable = 'gmx_mpi mdrun'
     tags = {'benchmark', 'contrib', 'gpu'}
@@ -34,44 +33,10 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
         4: (13.3, -0.05, None, 'ns/day'),
     }
 
-    @loggable
-    @property
-    def bench_name(self):
-        '''The benchmark name.
-
-        :type: :class:`str`
-        '''
-
-        return self.__bench
-
-    @property
-    def energy_step0_ref(self):
-        '''The energy reference value for this benchmark.
-
-        :type: :class:`str`
-        '''
-        return self.__nrg_ref[0]
-
-    @property
-    def energy_drift_ref(self):
-        '''The energy drift reference value for this benchmark.
-
-        :type: :class:`str`
-        '''
-        return self.__nrg_ref[1]
-
-    @property
-    def energy_step0_tol(self):
-        return self.__nrg_tol[0]
-
-    @property
-    def energy_drift_tol(self):
-        return self.__nrg_tol[1]
-
 
     @run_after('init')
     def prepare_test(self):
-        self.descr = f'GROMACS {self.benchmark_info['name']} GPU benchmark (LUMI contrib build {self.modules})' 
+        self.descr = f'GROMACS 46M atom GPU benchmark (LUMI contrib build {self.modules})' 
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                       'gromacs-benchmarks', 
                                        self.benchmark_info['name'],
@@ -81,7 +46,7 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
         ]
 
     @run_after('init')
-    def setup_run_opts(self):
+    def setup_runtime(self):
         self.num_tasks_per_node = 8
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
 
@@ -107,7 +72,6 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
             'GMX_FORCE_GPU_AWARE_MPI': '1',
             'GMX_GPU_PME_DECOMPOSITION': '1',
             'GMX_PMEONEDD': '1',
-            'HIPSYCL_RT_MAX_CACHED_NODES': f'{self.hipsycl_rt_max_cached_nodes}',
         }
 
     @run_before('run')
