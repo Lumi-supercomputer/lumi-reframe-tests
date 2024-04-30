@@ -212,7 +212,13 @@ site_configuration = {
                     'type': 'filelog',
                     'prefix': '%(check_system)s/%(check_partition)s',
                     'level': 'info',
-                    'format': '%(check_job_completion_time)s|reframe %(version)s|%(check_info)s|jobid=%(check_jobid)s|num_tasks=%(check_num_tasks)s|%(check_perf_var)s=%(check_perf_value)s|ref=%(check_perf_ref)s (l=%(check_perf_lower_thres)s, u=%(check_perf_upper_thres)s)|%(check_perf_unit)s',   # noqa: E501
+                    'format': (
+                        '%(check_job_completion_time)s|'
+                        '%(check_info)s|jobid=%(check_jobid)s|'
+                        '%(check_modules)s|'
+                        '%(check_perfvalues)s|'
+                    ),
+                    'format_perfvars': '%(check_perf_var)s=%(check_perf_value)s %(check_perf_unit)s,',
                     'datefmt': '%FT%T%:z',
                     'append': True
                 },
@@ -256,6 +262,7 @@ site_configuration = {
             'check_search_recursive': True,
             'remote_detect': False,
             'clean_stagedir': False,
+            #'report_file': './reports/%(check_system)s/%(check_partition)s/%(check_short_name)s/report_{sessionid}.json',
             'timestamp_dirs': '%Y%m%d-%H%M%s%z',
         }
     ]
