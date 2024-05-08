@@ -1,6 +1,7 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
+import reframe.utility as util
 
 @rfm.simple_test
 class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
@@ -16,7 +17,10 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
 
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
-    modules = ['GROMACS']
+    module_ver = parameter([
+        '2024.1-cpeAMD-23.09-HeFFTe-2.4-AdaptiveCpp-23.10.0-rocm-5.4.6',
+        '2024.1-cpeAMD-23.09-VkFFT-rocm-5.6.1',
+    ], loggable=True)
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
@@ -51,7 +55,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def prepare_test(self):
-        self.descr = f'GROMACS STMV GPU benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})'
+        self.descr = f"GROMACS {self.benchmark_info['name']} benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})"
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                       'gromacs-benchmarks', 
                                        self.benchmark_info['name'],
@@ -59,6 +63,11 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
+
+    @run_after('init')
+    def apply_module_ver(self):
+        module = f'GROMACS/{self.module_ver}'
+        self.modules = [module]
 
     @run_after('init')
     def setup_runtime(self):
