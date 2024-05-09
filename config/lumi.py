@@ -256,8 +256,7 @@ site_configuration = {
         {
             'check_search_path': ['checks/'],
             'check_search_recursive': True,
-            'remote_detect': False,
-            'clean_stagedir': False
+            'remote_detect': False
         }
     ]
 }
