@@ -5,9 +5,13 @@ import reframe.utility as util
 
 @rfm.simple_test
 class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
-    '''GROMACS STMV benchmark. Updated version.
-    This check uses different GPU acceleration modes (update: gpu resident and gpu offload; bonded and non-bonded interactions on gpu),
-    evalutes performance and checks for a total energy on step 0 and conserved energy drift against reference values.
+    '''GROMACS STMV benchmark. Updated version. 
+    Páll, S., & Alekseenko, A. (2024). Supplementary information for "GROMACS on AMD GPU-Based HPC Platforms: Using SYCL for Performance and Portability" [Data set]. 
+    [https://doi.org/10.5281/zenodo.11087335](https://zenodo.org/doi/10.5281/zenodo.11087334)
+    Direct access to the data set: https://zenodo.org/records/11087335/files/stmv_gmx_v2.tar.gz?download=1
+
+    The test runs different GPU acceleration modes (update: gpu resident and gpu offload; bonded and non-bonded interactions on gpu),
+    evalutes performance and validates for a total energy at step 0 and conserved energy drift.
     '''
     benchmark_info = {
         'name': 'stmv_v2',
