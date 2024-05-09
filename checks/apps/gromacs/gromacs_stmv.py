@@ -1,122 +1,91 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
-from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
-
-# This is based on CSCS Reframe GROMACS tests library.
-# The test uses STMV benchmark (https://doi.org/10.5281/zenodo.3893789),
-# with a different GPU acceleration modes (update: gpu resident and gpu offload; bonded and non-bonded interactions on gpu),
-# evalutes performance of a single node configuration with heFFTe and VkFFT libraries and a two-node with heFFTe only,
-# checks for a total energy on step 0 and conserved energy drift against reference values.    
+import reframe.utility as util
 
 @rfm.simple_test
-class lumi_gromacs_stmv(gromacs_check):
-    # Purpose of a second and a third parameter changes to a total energy 
-    # at step 0 and energy drift; tolerances are now in readout functions
-    benchmark_info = parameter([
-        ('stmv', [-1.45939e+07, 1.40e-03], [0.001, 0.1]), 
-    ], fmt=lambda x: x[0], loggable=True)
-    update_mode = parameter(['gpu', 'cpu'])
-    nb_impl = parameter(['gpu'])
-    bonded_impl = parameter(['gpu'])
-    fft_variant = parameter(['heffte', 'vkfft'])
+class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
+    '''GROMACS STMV benchmark. Updated version. 
+    Páll, S., & Alekseenko, A. (2024). Supplementary information for "GROMACS on AMD GPU-Based HPC Platforms: Using SYCL for Performance and Portability" [Data set]. 
+    [https://doi.org/10.5281/zenodo.11087335](https://zenodo.org/doi/10.5281/zenodo.11087334)
+    Direct access to the data set: https://zenodo.org/records/11087335/files/stmv_gmx_v2.tar.gz?download=1
+
+    The test runs different GPU acceleration modes (update: gpu resident and gpu offload; bonded and non-bonded interactions on gpu),
+    evalutes performance and validates for a total energy at step 0 and conserved energy drift.
+    '''
+    benchmark_info = {
+        'name': 'stmv_v2',
+        'energy_step0_ref': -1.46491e+07,
+        'energy_step0_tol': 0.001,
+    }
+
+    valid_systems = ['lumi:gpu']
+    valid_prog_environs = ['cpeAMD']
+    module_ver = parameter([
+        '2024.1-cpeAMD-23.09-HeFFTe-2.4-AdaptiveCpp-23.10.0-rocm-5.4.6',
+        '2024.1-cpeAMD-23.09-VkFFT-rocm-5.6.1',
+    ], loggable=True)
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
     num_nodes = parameter([1,2], loggable=True)
     num_gpus_per_node = 8
-    time_limit = '15m'
-    valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['cpeAMD']
+    time_limit = '10m'
+    nb_impl = parameter(['gpu'])
+    update_mode = parameter(['gpu', 'cpu'])
+    bonded_impl = parameter(['gpu'])
+    executable = 'gmx_mpi mdrun'
+    tags = {'benchmark', 'contrib', 'gpu'}
+    keep_files = ['md.log']
 
     allref = {
         1: {
             'gpu': { # update=gpu, gpu resident mode
-                'stmv': (58.6, -0.05, None, 'ns/day'),
+                'stmv_v2': (100.0, -0.05, None, 'ns/day'),
             },
             'cpu': { # update=cpu, force offload mode
-                'stmv': (42.3, -0.05, None, 'ns/day'),
+                'stmv_v2': (42.3, -0.05, None, 'ns/day'),
             },
         },
         2: {
             'gpu': { # update=gpu, gpu resident mode
-                'stmv': (76.9, -0.05, None, 'ns/day'),
+                'stmv_v2': (76.9, -0.05, None, 'ns/day'),
             },
             'cpu': { # update=cpu, force offload mode
-                'stmv': (62.6, -0.05, None, 'ns/day'),
+                'stmv_v2': (62.6, -0.05, None, 'ns/day'),
             },
         },
     }
 
-    tags = {'benchmark', 'contrib/22.12'}
-
-    @loggable
-    @property
-    def bench_name(self):
-        '''The benchmark name.
-
-        :type: :class:`str`
-        '''
-
-        return self.__bench
-
-    @property
-    def energy_step0_ref(self):
-        '''The energy reference value for this benchmark.
-
-        :type: :class:`str`
-        '''
-        return self.__nrg_ref[0]
-
-    @property
-    def energy_drift_ref(self):
-        '''The energy drift reference value for this benchmark.
-
-        :type: :class:`str`
-        '''
-        return self.__nrg_ref[1]
-
-    @property
-    def energy_step0_tol(self):
-        return self.__nrg_tol[0]
-
-    @property
-    def energy_drift_tol(self):
-        return self.__nrg_tol[1]
-
     @run_after('init')
     def prepare_test(self):
-        self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
-        self.descr = f'GROMACS {self.__bench} STMV GPU benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})'
+        self.descr = f"GROMACS {self.benchmark_info['name']} benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})"
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
-                                       'gromacs-benchmarks', 
-                                       'zenodo.org', 
-                                       'doi',
-                                       '10.5281',
-                                       'zenodo.3893788',
-                                       'GROMACS_heterogeneous_parallelization_benchmark_info_and_systems_JCP', 
-                                       self.__bench, 'topol.tpr')
+                                      'gromacs-benchmarks', 
+                                       self.benchmark_info['name'],
+                                      'topol.tpr')
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
 
     @run_after('init')
-    def setup_fft_variant(self):
-        match self.fft_variant:
-            case 'heffte':
-                self.modules = ['GROMACS/2023.2-cpeAMD-22.12-HeFFTe-GPU']
-                self.num_tasks_per_node = 8
-                npme_ranks = 2*self.num_nodes
-            case 'vkfft':
-                self.modules = ['GROMACS/2023.2-cpeAMD-22.12-VkFFT-GPU']
-                self.num_tasks_per_node = 8
-                npme_ranks = 1
-            case _:
-                self.skip('FFT library variant not defined')
+    def apply_module_ver(self):
+        module = f'GROMACS/{self.module_ver}'
+        self.modules = [module]
+
+    @run_after('init')
+    def setup_runtime(self):
+        self.num_tasks_per_node = 8
+        self.num_tasks = self.num_tasks_per_node*self.num_nodes
+        if self.num_nodes > 1:
+           npme_ranks = 2*self.num_nodes
+        else:
+           npme_ranks = 1
 
         self.executable_opts += [
-            '-nsteps 20000',
-            '-nstlist 400',
+            '-nsteps -1',
+            '-maxh 0.085',  # sets runtime to 5 mins
+            '-nstlist 400', # refer to https://manual.gromacs.org/2024.1/user-guide/mdp-options.html#mdp-nstlist
             '-noconfout',
             '-notunepme',
             '-resetstep 10000',
@@ -132,12 +101,12 @@ class lumi_gromacs_stmv(gromacs_check):
             'OMP_NUM_THREADS': '7',
             'OMP_PROC_BIND': 'close',
             'OMP_PLACES': 'cores',
-            'OMP_DISPLAY_ENV': '1',
-            'OMP_DISPLAY_AFFINITY': 'TRUE',
+            #'OMP_DISPLAY_ENV': '1',
+            #'OMP_DISPLAY_AFFINITY': 'TRUE',
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
             'GMX_GPU_PME_DECOMPOSITION': '1',
-            'GMX_PMEONEDD': '1'
+            'GMX_PMEONEDD': '1',
         }
 
     @run_before('run')
@@ -157,23 +126,6 @@ class lumi_gromacs_stmv(gromacs_check):
         ]
         self.executable = './select_gpu ' + self.executable
 
-    @run_after('init')
-    def setup_nb(self):
-        valid_systems = {
-            'heffte': {
-                1: ['lumi:gpu'],
-                2: ['lumi:gpu'],
-            },
-            'vkfft': {
-                1: ['lumi:gpu'],
-            }
-        }
-        try:
-            self.valid_systems = valid_systems[self.fft_variant][self.num_nodes]
-        except KeyError:
-            self.valid_systems = []
-
-
     @performance_function('ns/day')
     def perf(self):
         return sn.extractsingle(r'Performance:\s+(?P<perf>\S+)',
@@ -189,19 +141,31 @@ class lumi_gromacs_stmv(gromacs_check):
     @deferrable
     def energy_drift(self):
         return sn.extractsingle(r'\s+Conserved\s+energy\s+drift\:\s+(\S+)', 'md.log', 1, float)
+
+    @deferrable
+    def verlet_buff_tol(self):
+        return sn.extractsingle(r'\s+verlet-buffer-tolerance\s+\=\s+(\S+)', 'md.log', 1, float)
     
     @sanity_function
     def assert_energy_readout(self):
         return sn.all([
             sn.assert_found('Finished mdrun', 'md.log', 'Run failed to complete'), 
-            sn.assert_reference(self.energy_step0(), self.energy_step0_ref, -self.energy_step0_tol, self.energy_step0_tol), #'Failed to meet reference value for total energy at step 0'
-            sn.assert_reference(self.energy_drift(), self.energy_drift_ref, -self.energy_drift_tol, self.energy_drift_tol), #'Failed to meet reference value for conserved energy drift'
+            sn.assert_reference(
+                self.energy_step0(),
+                self.benchmark_info['energy_step0_ref'],
+                -self.benchmark_info['energy_step0_tol'],
+                self.benchmark_info['energy_step0_tol']
+            ),
+            sn.assert_lt(
+                self.energy_drift(),
+                2*self.verlet_buff_tol()
+           ),
         ])
 
     @run_before('run')
     def setup_run(self):
         try:
-            found = self.allref[self.num_nodes][self.update_mode][self.bench_name]
+            found = self.allref[self.num_nodes][self.update_mode][self.benchmark_info['name']]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) of '
                       f'{self.bench_name!r} is not supported on {arch!r}')
@@ -209,7 +173,6 @@ class lumi_gromacs_stmv(gromacs_check):
         # Setup performance references
         self.reference = {
             '*': {
-                'perf': self.allref[self.num_nodes][self.update_mode][self.bench_name]
+                'perf': self.allref[self.num_nodes][self.update_mode][self.benchmark_info['name']]
             }
         }
-        self.num_tasks = self.num_tasks_per_node*self.num_nodes
