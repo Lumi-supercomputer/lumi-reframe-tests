@@ -1,12 +1,17 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
+import reframe.utility as util
 
 @rfm.simple_test
 class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
-    '''GROMACS STMV benchmark. Updated version.
-    This check uses different GPU acceleration modes (update: gpu resident and gpu offload; bonded and non-bonded interactions on gpu),
-    evalutes performance and checks for a total energy on step 0 and conserved energy drift against reference values.
+    '''GROMACS STMV benchmark. Updated version. 
+    Páll, S., & Alekseenko, A. (2024). Supplementary information for "GROMACS on AMD GPU-Based HPC Platforms: Using SYCL for Performance and Portability" [Data set]. 
+    [https://doi.org/10.5281/zenodo.11087335](https://zenodo.org/doi/10.5281/zenodo.11087334)
+    Direct access to the data set: https://zenodo.org/records/11087335/files/stmv_gmx_v2.tar.gz?download=1
+
+    The test runs different GPU acceleration modes (update: gpu resident and gpu offload; bonded and non-bonded interactions on gpu),
+    evalutes performance and validates for a total energy at step 0 and conserved energy drift.
     '''
     benchmark_info = {
         'name': 'stmv_v2',
@@ -16,13 +21,16 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
 
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
-    modules = ['GROMACS']
+    module_ver = parameter([
+        '2024.1-cpeAMD-23.09-HeFFTe-2.4-AdaptiveCpp-23.10.0-rocm-5.4.6',
+        '2024.1-cpeAMD-23.09-VkFFT-rocm-5.6.1',
+    ], loggable=True)
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
     num_nodes = parameter([1,2], loggable=True)
     num_gpus_per_node = 8
-    time_limit = '15m'
+    time_limit = '10m'
     nb_impl = parameter(['gpu'])
     update_mode = parameter(['gpu', 'cpu'])
     bonded_impl = parameter(['gpu'])
@@ -51,7 +59,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def prepare_test(self):
-        self.descr = f'GROMACS STMV GPU benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})'
+        self.descr = f"GROMACS {self.benchmark_info['name']} benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})"
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                       'gromacs-benchmarks', 
                                        self.benchmark_info['name'],
@@ -59,6 +67,11 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
+
+    @run_after('init')
+    def apply_module_ver(self):
+        module = f'GROMACS/{self.module_ver}'
+        self.modules = [module]
 
     @run_after('init')
     def setup_runtime(self):
@@ -112,18 +125,6 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
             'chmod +x ./select_gpu'
         ]
         self.executable = './select_gpu ' + self.executable
-
-    @run_after('init')
-    def setup_nb(self):
-        valid_systems = {
-            1: ['lumi:gpu'],
-            2: ['lumi:gpu'],
-        }
-        try:
-            self.valid_systems = valid_systems[self.num_nodes]
-        except KeyError:
-            self.valid_systems = []
-
 
     @performance_function('ns/day')
     def perf(self):

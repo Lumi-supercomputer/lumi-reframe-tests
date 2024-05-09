@@ -4,7 +4,12 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
-    '''The test uses ethanol-46M_RF system to scale on multiple GPU nodes.
+    '''GROMACS "Grappa" benchmark.
+    Páll, S., & Alekseenko, A. (2024). Supplementary information for "GROMACS on AMD GPU-Based HPC Platforms: Using SYCL for Performance and Portability" [Data set]. 
+    [https://doi.org/10.5281/zenodo.11087335](https://zenodo.org/doi/10.5281/zenodo.11087334)
+    Direct access to the data set: https://zenodo.org/records/11087335/files/grappa-46M.tar.bz2
+
+    The test uses ethanol-46M_RF system to scale on multiple GPU nodes.
     '''
     benchmark_info = {
         'name': 'ethanol',
@@ -14,8 +19,9 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
 
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
-    # This needs to be driven externally
-    modules = ['GROMACS']
+    module_ver = parameter([
+        '2024.1-cpeAMD-23.09-HeFFTe-2.4-AdaptiveCpp-23.10.0-rocm-5.4.6',
+    ], loggable=True)
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
@@ -36,7 +42,7 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def prepare_test(self):
-        self.descr = f'GROMACS 46M atom GPU benchmark (LUMI contrib build {self.modules})' 
+        self.descr = f'GROMACS {self.benchmark_info['name']} GPU benchmark' 
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                       'gromacs-benchmarks', 
                                        self.benchmark_info['name'],
@@ -44,6 +50,11 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
+
+    @run_after('init')
+    def apply_module_ver(self):
+        module = f'GROMACS/{self.module_ver}'
+        self.modules = [module]
 
     @run_after('init')
     def setup_runtime(self):
