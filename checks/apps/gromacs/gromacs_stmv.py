@@ -1,7 +1,6 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
-import reframe.utility as util
 
 @rfm.simple_test
 class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
