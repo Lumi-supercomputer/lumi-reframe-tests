@@ -7,6 +7,7 @@ site_configuration = {
             'descr': 'LUMI Cray EX Supercomputer',
             'hostnames': ['ln\d+-nmn', 'uan\d+-nmn.local', '\S+'],
             'modules_system': 'lmod',
+            'modules': ['LUMI'],
             'resourcesdir': '/projappl/%s/reframe_resources/' % project,
             'partitions': [
                 {
@@ -15,16 +16,14 @@ site_configuration = {
                     'time_limit': '10m',
                     'environs': [
                         'builtin',
-                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'cpeAOCC',
                         'cpeCray',
                         'cpeGNU',
                     ],
                     'descr': 'Login nodes',
                     'max_jobs': 4,
-                    'modules': ['LUMI', 'partition/L'],
+                    'modules': ['partition/L'],
                     'launcher': 'local'
                 },
                 {
@@ -48,7 +47,7 @@ site_configuration = {
                         'cpeGNU',
                     ],
                     'max_jobs': 100,
-                    'modules': ['LUMI', 'partition/C'],
+                    'modules': ['partition/C'],
                     'access': ['--partition small',
                                f'--account={project}'],
                     'resources': [
@@ -80,47 +79,13 @@ site_configuration = {
                         'cpeGNU',
                     ],
                     'max_jobs': 100,
-                    'modules': ['LUMI', 'partition/C'],
+                    'modules': ['partition/C'],
                     'access': ['--partition standard',
                                f'--account={project}'],
                     'resources': [
                         {
                             'name': 'memory',
                             'options': ['--mem={mem_per_node}']
-                        },
-                    ],
-                    'launcher': 'srun'
-                },
-                {
-                    'name': 'eap',
-                    'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250X 8/cn)',
-                    'scheduler': 'slurm',
-                    'time_limit': '10m',
-                    'container_platforms': [
-                        {
-                            'type': 'Singularity',
-                            'modules': []
-                        }
-                    ],
-                    'environs': [
-                        'builtin',
-                        'builtin-hip',
-                        'PrgEnv-aocc',
-                        'PrgEnv-cray',
-                        'PrgEnv-gnu',
-                    ],
-                    'max_jobs': 1,
-                    'modules': ['LUMI', 'partition/EAP'],
-                    'access': ['--partition eap',
-                               f'--account={project}'],
-                    'resources': [
-                        {
-                            'name': 'memory',
-                            'options': ['--mem={mem_per_node}']
-                        },
-                        {
-                            'name': '_rfm_gpu',
-                            'options': ['--gres=gpu:mi250:{num_gpus_per_node}']
                         },
                     ],
                     'launcher': 'srun'
@@ -138,14 +103,16 @@ site_configuration = {
                     ],
                     'environs': [
                         'builtin',
-                        'builtin-hip',
-                        'PrgEnv-aocc',
+                        'PrgEnv-amd',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
+                        'cpeAMD',
+                        'cpeCray',
                         'cpeGNU',
+                        'ROCm',
                     ],
                     'max_jobs': 10,
-                    'modules': ['LUMI', 'partition/G'],
+                    'modules': ['partition/G'],
                     'access': ['--partition small-g',
                                f'--account={project}'],
                     'resources': [
@@ -162,26 +129,17 @@ site_configuration = {
                 },
             ]
         },
-        {
-            'name': 'generic',
-            'descr': 'Generic fallback system',
-            'partitions': [
-                {
-                    'name': 'default',
-                    'scheduler': 'local',
-                    'environs': ['builtin'],
-                    'descr': 'Login nodes',
-                    'launcher': 'local'
-                }
-            ],
-            'hostnames': ['.*']
-        }
     ],
     'environments': [
         {
             'name': 'PrgEnv-aocc',
-            'target_systems': ['lumi'],
-            'modules': ['PrgEnv-aocc']
+            'target_systems': ['lumi:small', 'lumi:standard'],
+            'modules': ['PrgEnv-amd']
+        },
+        {
+            'name': 'PrgEnv-amd',
+            'target_systems': ['lumi:gpu'],
+            'modules': ['PrgEnv-amd']
         },
         {
             'name': 'PrgEnv-cray',
@@ -193,13 +151,14 @@ site_configuration = {
             'target_systems': ['lumi'],
             'modules': ['PrgEnv-gnu']
         },
-         {
-             'name': 'PrgEnv-intel',
-             'modules': ['PrgEnv-intel']
-         },
+        {
+            'name': 'cpeAMD',
+            'target_systems': ['lumi:gpu'],
+            'modules': ['cpeAMD']
+        },
         {
             'name': 'cpeAOCC',
-            'target_systems': ['lumi'],
+            'target_systems': ['lumi:small', 'lumi:standard'],
             'modules': ['cpeAOCC']
         },
         {
@@ -213,35 +172,15 @@ site_configuration = {
             'modules': ['cpeGNU']
         },
         {
-            'name': 'PrgEnv-cray',
-            'modules': ['PrgEnv-cray']
-        },
-        {
-            'name': 'PrgEnv-gnu',
-            'modules': ['PrgEnv-gnu']
-        },
-        {
-            'name': 'builtin',
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn'
-        },
-        {
-            'name': 'builtin-gcc',
-            'cc': 'gcc',
-            'cxx': 'g++',
-            'ftn': 'gfortran'
-        },
-        {
-            'name': 'builtin-hip',
+            'name': 'ROCm',
             'cc': 'hipcc',
             'cxx': 'hipcc',
             'ftn': '',
-            'cflags': ['-I$MPICH_DIR/include'],
-            'ldflags': ['-L$MPICH_DIR/lib', '-lmpi', '-L$CRAY_MPICH_ROOTDIR/gtl/lib/', '-lmpi_gtl_hsa'],
+            #'cflags': 
+            #'ldflags': 
             'cppflags': ['-D__HIP_PLATFORM_AMD__'],
-            'modules': ['rocm', 'craype-accel-amd-gfx90a'],
-            'target_systems': ['lumi:gpu', 'lumi:eap']
+            'modules': ['rocm'],
+            'target_systems': ['lumi:gpu']
         }
     ],
     'logging': [
@@ -273,7 +212,9 @@ site_configuration = {
                     'type': 'filelog',
                     'prefix': '%(check_system)s/%(check_partition)s',
                     'level': 'info',
-                    'format': '%(check_job_completion_time)s|reframe %(version)s|%(check_info)s|jobid=%(check_jobid)s|num_tasks=%(check_num_tasks)s|%(check_perf_var)s=%(check_perf_value)s|ref=%(check_perf_ref)s (l=%(check_perf_lower_thres)s, u=%(check_perf_upper_thres)s)|%(check_perf_unit)s',   # noqa: E501
+                    #check fields: name|build_locally|build_time_limit|descr|display_name|env_vars|environ|exclusive_access|executable|executable_opts|extra_resources|hashcode|job_completion_time_unix|job_exitcode|job_nodelist|jobid|keep_files|local|maintainers|max_pending_time|modules|name|num_cpus_per_task|num_gpus_per_node|num_nodes|num_tasks|num_tasks_per_core|num_tasks_per_node|num_tasks_per_socket|outputdir|partition|perf_var=perf_value perf_unit|postbuild_cmds|postrun_cmds|prebuild_cmds|prefix|prerun_cmds|readonly_files|short_name|sourcepath|sourcesdir|stagedir|strict_check|system|tags|time_limit|unique_name|use_multithreading|valid_prog_environs|valid_systems|variables
+                    'format': '%(check_job_completion_time)s,%(check_short_name)s,%(check_hashcode)s,%(check_modules)s,%(check_module_ver)s,%(check_name)s,%(check_system)s,%(check_partition)s,%(check_environ)s,jobid=%(check_jobid)s,num_nodes=%(check_num_nodes)s,num_task=%(check_num_tasks)s,num_tasks_per_node=%(check_num_tasks_per_node)s,num_gpus_per_node=%(check_num_gpus_per_node)s,%(check_perfvalues)s',
+                    'format_perfvars': '%(check_perf_var)s=%(check_perf_value)s %(check_perf_unit)s,',
                     'datefmt': '%FT%T%:z',
                     'append': True
                 },
