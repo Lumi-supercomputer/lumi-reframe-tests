@@ -18,6 +18,8 @@ batch_size_per_gpu = 256
 num_iters = 25
 model_name = 'resnet152'
 
+os.environ['NCCL_NET_GDR_LEVEL'] = '2'
+
 #distr_env = DistributedEnviron()
 dist.init_process_group(backend="nccl")
 world_size = dist.get_world_size()

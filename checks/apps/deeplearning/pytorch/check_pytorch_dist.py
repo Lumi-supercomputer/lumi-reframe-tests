@@ -29,6 +29,10 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
         }
     }
 
+    @run_before('run')
+    def set_cpu_binding(self):
+        self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
+
     @sanity_function
     def assert_job_is_complete(self):
         return sn.all([
@@ -78,7 +82,7 @@ class pytorch_distr_cnn_container_direct(pytorch_distr_cnn_base):
             'sif-images',
             'lumi-pytorch-rocm-5.6.1-python-3.10-pytorch-v2.1.0.sif'
         )
-        self.container_platform.command = 'bash run-pytorch.sh'
+        self.container_platform.command = 'bash conda-python-distributed.sh -u cnn_distr.py --gpu --modelpath model'
 
         self.container_platform.mount_points = [
             ('/var/spool/slurmd', '/var/spool/slurmd'),
