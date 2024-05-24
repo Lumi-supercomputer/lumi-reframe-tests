@@ -14,8 +14,7 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     env_vars = {
         'NCCL_DEBUG': 'INFO',
         'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
-        # Fails to work on multiple nodes with NCCL_NET_GDR_LEVEL=3
-        'NCCL_NET_GDR_LEVEL': '2',
+        'NCCL_NET_GDR_LEVEL': '2', # Fails to work on multiple nodes with NCCL_NET_GDR_LEVEL=3
         'MIOPEN_USER_DB_PATH': '/tmp/${USER}-miopen-cache-${SLURM_JOB_ID}',
         'MIOPEN_CUSTOM_CACHE_DIR': '${MIOPEN_USER_DB_PATH}'
     }
@@ -32,7 +31,11 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def assert_job_is_complete(self):
-        return sn.assert_found(r'Total average', self.stdout)
+        return sn.all([
+            sn.assert_found(r'Using network AWS Libfabric', self.stdout),
+            sn.assert_found(r'Selected Provider is cxi', self.stdout),
+            sn.assert_found(r'Total average', self.stdout)  
+        ])
 
     @performance_function('samples/sec')
     def samples_per_sec_per_gpu(self):
@@ -50,7 +53,7 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
 
 
 @rfm.simple_test
-class pytorch_distr_cnn_module(pytorch_distr_cnn_base):
+class pytorch_distr_cnn_container_module(pytorch_distr_cnn_base):
     modules = ['PyTorch']
 
     tags = {'python', 'contrib'}
@@ -63,8 +66,7 @@ class pytorch_distr_cnn_module(pytorch_distr_cnn_base):
 
 
 @rfm.simple_test
-class pytorch_distr_cnn_singularity(pytorch_distr_cnn_base):
-    descr = 'Check the training throughput of a cnn with torch.distributed'
+class pytorch_distr_cnn_container_direct(pytorch_distr_cnn_base):
 
     tags = {'singularity', 'python'}
 
@@ -78,30 +80,9 @@ class pytorch_distr_cnn_singularity(pytorch_distr_cnn_base):
         )
         self.container_platform.command = 'bash run-pytorch.sh'
 
-
-@rfm.simple_test
-class pytorch_distr_cnn_singularity_aws(pytorch_distr_cnn_singularity):
-    tags = {'singularity'}
-
-    @run_before('run')
-    def set_container_variables(self):
-        super().set_container_variables()
         self.container_platform.mount_points = [
             ('/var/spool/slurmd', '/var/spool/slurmd'),
             ('/opt/cray', '/opt/cray'),
             ('/usr/lib64/libcxi.so.1', '/usr/lib64/libcxi.so.1'),
             ('/usr/lib64/libjansson.so.4', '/usr/lib64/libjansson.so.4'),
         ]
-        self.env_vars.update({
-            'Nodes': '2',
-            'SINGULARITYENV_CXI_FORK_SAFE': '0',
-            'SINGULARITYENV_CXI_FORK_SAFE_HP': '0',
-        })
-
-    @sanity_function
-    def assert_job_is_complete(self):
-        return sn.all([
-            sn.assert_found(r'Using network AWS Libfabric', self.stdout),
-            sn.assert_found(r'Selected Provider is cxi', self.stdout),
-            super().assert_job_is_complete()
-        ])
