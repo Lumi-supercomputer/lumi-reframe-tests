@@ -14,7 +14,8 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     env_vars = {
         'NCCL_DEBUG': 'INFO',
         'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
-        'NCCL_NET_GDR_LEVEL': '3',
+        # Fails to work on multiple nodes with NCCL_NET_GDR_LEVEL=3
+        'NCCL_NET_GDR_LEVEL': '2',
         'MIOPEN_USER_DB_PATH': '/tmp/${USER}-miopen-cache-${SLURM_JOB_ID}',
         'MIOPEN_CUSTOM_CACHE_DIR': '${MIOPEN_USER_DB_PATH}'
     }
@@ -92,11 +93,6 @@ class pytorch_distr_cnn_singularity_aws(pytorch_distr_cnn_singularity):
             ('/usr/lib64/libjansson.so.4', '/usr/lib64/libjansson.so.4'),
         ]
         self.env_vars.update({
-            'LD_LIBRARY_PATH': (
-                '/opt/aws-ofi-rccl:'
-                '/opt/cray/libfabric/1.15.2.0/lib64/:'
-                '${LD_LIBRARY_PATH}'
-            ),
             'Nodes': '2',
             'SINGULARITYENV_CXI_FORK_SAFE': '0',
             'SINGULARITYENV_CXI_FORK_SAFE_HP': '0',
