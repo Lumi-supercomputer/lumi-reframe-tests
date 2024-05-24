@@ -9,7 +9,7 @@ import torch.optim as optim
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader, Dataset, DistributedSampler
 from torchvision import models
-from pt_distr_env import DistributedEnviron
+#from pt_distr_env import DistributedEnviron
 
 
 num_warmup_epochs = 2
@@ -18,14 +18,23 @@ batch_size_per_gpu = 256
 num_iters = 25
 model_name = 'resnet152'
 
-distr_env = DistributedEnviron()
+#distr_env = DistributedEnviron()
 dist.init_process_group(backend="nccl")
 world_size = dist.get_world_size()
 rank = dist.get_rank()
-device = distr_env.local_rank
+#device = int(os.environ['SLURM_LOCALID'])
 
-model = getattr(models, model_name)()
+#model = getattr(models, model_name)()
+#model.to(device)
+#model = model.cuda()
+
+model = models.resnet152()
+#device_id = int(os.environ['ROCR_VISIBLE_DEVICES'])
+device = torch.device("cuda:0")
 model.to(device)
+
+ddp_model = DistributedDataParallel(model)
+
 
 optimizer = optim.SGD(model.parameters(), lr=0.01)
 
@@ -39,7 +48,7 @@ class SyntheticDataset(Dataset):
         return batch_size_per_gpu * num_iters * world_size
 
 
-ddp_model = DistributedDataParallel(model, device_ids=[device])
+#ddp_model = DistributedDataParallel(model, device_ids=[device])
 
 train_set = SyntheticDataset()
 train_sampler = DistributedSampler(
