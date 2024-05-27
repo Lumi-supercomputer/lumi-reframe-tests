@@ -8,13 +8,13 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['builtin']
     sourcesdir = 'src'
     exclusive_access = True
-    num_tasks = 32
+    num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
     env_vars = {
         'NCCL_DEBUG': 'INFO',
         'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
-        'NCCL_NET_GDR_LEVEL': '3',
+        'NCCL_NET_GDR_LEVEL': '2', # Fails to work on multiple nodes with NCCL_NET_GDR_LEVEL=3
         'MIOPEN_USER_DB_PATH': '/tmp/${USER}-miopen-cache-${SLURM_JOB_ID}',
         'MIOPEN_CUSTOM_CACHE_DIR': '${MIOPEN_USER_DB_PATH}'
     }
@@ -29,11 +29,16 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
         }
     }
 
+    @run_before('run')
+    def set_cpu_binding(self):
+        self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
+
     @sanity_function
     def assert_job_is_complete(self):
         return sn.all([
-            sn.assert_found(r'Launch mode Parallel/CGMD', self.stdout),
-            sn.assert_found(r'Total average', self.stdout),
+            sn.assert_found(r'Using network AWS Libfabric', self.stdout),
+            sn.assert_found(r'Selected Provider is cxi', self.stdout),
+            sn.assert_found(r'Total average', self.stdout)  
         ])
 
     @performance_function('samples/sec')
@@ -52,29 +57,20 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
 
 
 @rfm.simple_test
-class pytorch_distr_cnn(pytorch_distr_cnn_base):
-    descr = 'Check the training throughput of a cnn'
+class pytorch_distr_cnn_container_module(pytorch_distr_cnn_base):
     modules = ['PyTorch']
-    executable = 'python cnn_distr.py'
 
-    tags = {'python', 'contrib/22.08'}
+    tags = {'python', 'contrib'}
 
-    # @sanity_function
-    # def assert_job_is_complete(self):
-    #     return sn.all([
-    #         sn.assert_found(r'Using network AWS Libfabric', self.stdout),
-    #         sn.assert_found(r'Selected Provider is cxi', self.stdout),
-    #         super().assert_job_is_complete()
-    #     ])
+    @run_before('run')
+    def set_container_variables(self):
+        self.container_platform = 'Singularity'
+        self.container_platform.image = '$SIFPYTORCH'
+        self.container_platform.command = 'conda-python-distributed -u cnn_distr.py --gpu --modelpath model'
 
 
 @rfm.simple_test
-class pytorch_distr_cnn_singularity(pytorch_distr_cnn_base):
-    # The container used here doesn't include all the packages needed to run
-    # this test:
-    # MPICC=mpicc pip install --user mpi4py
-    # pip install datasets transformers python-hostlist
-    descr = 'Check the training throughput of a cnn with torch.distributed'
+class pytorch_distr_cnn_container_direct(pytorch_distr_cnn_base):
 
     tags = {'singularity', 'python'}
 
@@ -82,41 +78,15 @@ class pytorch_distr_cnn_singularity(pytorch_distr_cnn_base):
     def set_container_variables(self):
         self.container_platform = 'Singularity'
         self.container_platform.image = os.path.join(
-            self.current_system.resourcesdir,
-            'deepspeed',
-            'deepspeed_rocm5.2.3_ubuntu20.04_py3.7_pytorch_1.12.1_deepspeed.sif'  # noqa: E501
+            '/appl/local/containers',
+            'sif-images',
+            'lumi-pytorch-rocm-5.6.1-python-3.10-pytorch-v2.1.0.sif'
         )
-        self.container_platform.command = 'python cnn_distr.py'
+        self.container_platform.command = 'bash conda-python-distributed.sh -u cnn_distr.py --gpu --modelpath model'
 
-
-@rfm.simple_test
-class pytorch_distr_cnn_singularity_aws(pytorch_distr_cnn_singularity):
-    modules = ['singularity-bindings', 'aws-ofi-rccl']
-
-    tags = {'singularity'}
-
-    @run_before('run')
-    def set_container_variables(self):
-        super().set_container_variables()
         self.container_platform.mount_points = [
-            ('/appl', '/appl'),
-            ('$SCRATCH', '$SCRATCH'),
-            ('$EBROOTRCCL/lib/librccl.so.1.0',
-             '/opt/rocm-5.0.1/rccl/lib/librccl.so.1.0.50001')
+            ('/var/spool/slurmd', '/var/spool/slurmd'),
+            ('/opt/cray', '/opt/cray'),
+            ('/usr/lib64/libcxi.so.1', '/usr/lib64/libcxi.so.1'),
+            ('/usr/lib64/libjansson.so.4', '/usr/lib64/libjansson.so.4'),
         ]
-        self.env_vars.update({
-            'SINGULARITYENV_LD_LIBRARY_PATH': (
-                '/opt/ompi/lib:'
-                '${EBROOTAWSMINOFIMINRCCL}/lib:'
-                '/opt/cray/xpmem/2.4.4-2.3_9.1__gff0e1d9.shasta/lib64:'
-                '${SINGULARITYENV_LD_LIBRARY_PATH}'
-            ),
-        })
-
-    @sanity_function
-    def assert_job_is_complete(self):
-        return sn.all([
-            sn.assert_found(r'Using network AWS Libfabric', self.stdout),
-            sn.assert_found(r'Selected Provider is cxi', self.stdout),
-            super().assert_job_is_complete()
-        ])
