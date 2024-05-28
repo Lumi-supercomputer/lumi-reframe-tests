@@ -17,11 +17,13 @@ from datasets import disable_caching
 disable_progress_bar()
 disable_caching()
 
+os.environ['LOCAL_RANK'] = os.environ['SLURM_LOCALID']
+
 parser = argparse.ArgumentParser(description='BERT finetuning on SQuAD')
 parser.add_argument('--hf-model', type=str, default='bert-base-uncased',
                     help='Name of the HuggingFace model')
 parser.add_argument('--bert-cache-dir', type=str,
-                    default=os.path.join(os.getcwd(), 'cache'),
+                    default=os.path.join(os.getenv('HF_HOME'), 'cache'),
                     help='Path to the cache dir of BERT')
 parser.add_argument('--num-epochs', type=int, default=1,
                     help='number of benchmark iterations')
@@ -75,6 +77,8 @@ train_set = processed_dataset["train"]
 train_set.set_format(type='torch')
 
 parameters = filter(lambda p: p.requires_grad, model.parameters())
+
+deepspeed.init_distributed(dist_backend='nccl', auto_mpi_discovery=False, rank=int(os.environ['SLURM_LOCALID']))
 
 model_engine, optimizer, trainloader, __ = deepspeed.initialize(
     args=args,
