@@ -13,10 +13,6 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     num_gpus_per_node = 8
     env_vars = {
         'NCCL_DEBUG': 'INFO',
-        'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
-        'NCCL_NET_GDR_LEVEL': '2', # Fails to work on multiple nodes with NCCL_NET_GDR_LEVEL=3
-        'MIOPEN_USER_DB_PATH': '/tmp/${USER}-miopen-cache-${SLURM_JOB_ID}',
-        'MIOPEN_CUSTOM_CACHE_DIR': '${MIOPEN_USER_DB_PATH}'
     }
     throughput_per_gpu = 193.98
     throughput_total = throughput_per_gpu * num_tasks
