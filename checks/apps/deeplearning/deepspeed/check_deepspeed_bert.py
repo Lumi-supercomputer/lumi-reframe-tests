@@ -77,9 +77,13 @@ class deepspeed_bert_qa_train(deepspeed_bert_qa_train_base):
     tags = {'python', 'contrib'}
 
     @run_before('run')
+    def set_cpu_binding(self):
+        self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
+
+    @run_before('run')
     def set_container_variables(self):
         set_container_platform(self)
-        self.container_platform.command = 'conda-python-distributed -u bert_squad_deepspeed_train.py --deepspeed_config ds_config.json --num-epochs 5'
+        self.container_platform.command = 'bash ./conda-python-distributed.sh -u bert_squad_deepspeed_train.py --deepspeed_config ds_config.json --num-epochs 5'
 
     @run_before('run')
     def prepare_job(self):

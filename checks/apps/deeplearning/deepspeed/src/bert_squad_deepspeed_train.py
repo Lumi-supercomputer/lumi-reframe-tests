@@ -17,7 +17,7 @@ from datasets import disable_caching
 disable_progress_bar()
 disable_caching()
 
-os.environ['LOCAL_RANK'] = os.environ['SLURM_LOCALID']
+#os.environ['LOCAL_RANK'] = os.environ['SLURM_LOCALID']
 
 parser = argparse.ArgumentParser(description='BERT finetuning on SQuAD')
 parser.add_argument('--hf-model', type=str, default='bert-base-uncased',
@@ -78,7 +78,9 @@ train_set.set_format(type='torch')
 
 parameters = filter(lambda p: p.requires_grad, model.parameters())
 
-deepspeed.init_distributed(dist_backend='nccl', auto_mpi_discovery=False, rank=int(os.environ['SLURM_LOCALID']))
+
+deepspeed.init_distributed(dist_backend='nccl', auto_mpi_discovery=False, rank=int(os.environ['LOCAL_RANK'])) 
+#=int(os.environ['SLURM_LOCALID']))
 
 model_engine, optimizer, trainloader, __ = deepspeed.initialize(
     args=args,
@@ -102,6 +104,7 @@ for epoch in range(args.num_epochs):  # loop over the dataset multiple times
         model_engine.step()
 
 rank = torch.distributed.get_rank()
+
 if rank == 0:
     model_filename = f'model_finetuned_deepspeed'
     # save model's state_dict
