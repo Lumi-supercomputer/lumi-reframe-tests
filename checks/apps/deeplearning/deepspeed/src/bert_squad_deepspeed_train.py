@@ -12,7 +12,9 @@ from torch.nn import functional as F
 from datetime import datetime
 from datasets.utils import disable_progress_bar
 from datasets import disable_caching
+from deepspeed.accelerator import get_accelerator
 
+DEFAULT_BACKEND = get_accelerator().communication_backend_name()
 
 disable_progress_bar()
 disable_caching()
@@ -31,6 +33,11 @@ parser.add_argument('--download-only', action='store_true',
                     help='Download model, tokenizer, etc and exit')
 parser.add_argument('--test', action='store_true',
                     help='Test after training')
+parser.add_argument("--backend",
+                    type=str,
+                    default=DEFAULT_BACKEND,
+                    choices=['nccl', 'ccl', 'mpi'],
+                    help='Communication library to use')
 parser = deepspeed.add_config_arguments(parser)
 args = parser.parse_args()
 
@@ -79,8 +86,12 @@ train_set.set_format(type='torch')
 parameters = filter(lambda p: p.requires_grad, model.parameters())
 
 
-deepspeed.init_distributed(dist_backend='nccl', auto_mpi_discovery=False, rank=int(os.environ['LOCAL_RANK'])) 
+#deepspeed.init_distributed(dist_backend='nccl', auto_mpi_discovery=False, rank=int(os.environ['LOCAL_RANK'])) 
 #=int(os.environ['SLURM_LOCALID']))
+
+deepspeed.init_distributed(dist_backend=args.backend)
+local_rank = int(os.environ['LOCAL_RANK'])
+get_accelerator().set_device(local_rank)
 
 model_engine, optimizer, trainloader, __ = deepspeed.initialize(
     args=args,

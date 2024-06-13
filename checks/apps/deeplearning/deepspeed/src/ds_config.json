@@ -3,9 +3,9 @@
     "gradient_accumulation_steps": 1,
     "steps_per_print": 10,
     "optimizer": {
-        "type": "AdamW",
+        "type": "SGD",
         "params": {
-            "lr": 5e-05
+            "lr": 1e-03
         }
     },
     "fp16": {

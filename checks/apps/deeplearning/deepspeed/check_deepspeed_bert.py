@@ -38,7 +38,7 @@ class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
     num_gpus_per_node = 8
     env_vars = {
         'NCCL_DEBUG': 'INFO',
-        'TORCH_EXTENSIONS_DIR': './torch_extensions',
+#        'TORCH_EXTENSIONS_DIR': './torch_extensions',
         'TRANSFORMERS_OFFLINE': '1',
         'HF_DATASETS_OFFLINE': '1'
     }
@@ -83,7 +83,7 @@ class deepspeed_bert_qa_train(deepspeed_bert_qa_train_base):
     @run_before('run')
     def set_container_variables(self):
         set_container_platform(self)
-        self.container_platform.command = 'bash ./conda-python-distributed.sh -u bert_squad_deepspeed_train.py --deepspeed_config ds_config.json --num-epochs 5'
+        self.container_platform.command = 'bash ./conda-python-distributed.sh -u bert_squad_deepspeed_train.py --deepspeed_config ds_config.json --num-epochs 5 --deepspeed'
 
     @run_before('run')
     def prepare_job(self):
