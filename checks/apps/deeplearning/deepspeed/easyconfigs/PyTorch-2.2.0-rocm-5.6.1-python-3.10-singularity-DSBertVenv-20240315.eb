@@ -24,7 +24,7 @@ local_c_DeepSpeed_version =      '0.12.3'
 local_c_flashattention_version = '2.0.4'
 local_c_xformers_version =       '0.0.25+8dd471d.d20240209'
 
-local_conda_env = 'pytorch'
+local_conda_env = 'ds-bert'
 
 
 name =          'PyTorch'
