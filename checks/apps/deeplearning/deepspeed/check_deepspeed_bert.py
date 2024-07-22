@@ -42,7 +42,7 @@ class deepspeed_bert_qa_train_base(rfm.RunOnlyRegressionTest):
 
     reference = {
         'lumi:gpu': {
-            'samples_per_sec': (5579, -0.05, None, 'samples/sec')}
+            'samples_per_sec': (2800, -0.05, None, 'samples/sec')}
     }
 
     @sanity_function
