@@ -4,19 +4,24 @@ import reframe.utility.sanity as sn
 from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 
 @rfm.simple_test
-class lumi_gromacs_mpi(gromacs_check):
+class lumi_gromacs_hecbiosim(gromacs_check):
     descr = """This is to test MPI version of GROMACS.""" 
+
+    valid_systems = ['lumi:standard']
+    valid_prog_environs = ['cpeGNU']
+    module_ver = parameter([
+        '2023.3-cpeGNU-23.09-CPU',
+    ], loggable=True)
     maintainers = ['mszpindler']
     use_multithreading = False
     executable_opts += ['-dlb yes', '-ntomp 1', '-npme -1']
-    valid_prog_environs = ['cpeGNU']
-    valid_systems = ['lumi:standard']
-    modules = ['GROMACS']
     time_limit = '15m'
 
     num_nodes = parameter([1, 2, 4], loggable=True)
 
     nb_impl = parameter(['cpu'])
+    tags = {'benchmark', 'contrib', 'cpu'}
+    keep_files = ['md.log']
     
     allref = {
         # Results collected with GROMACS 2023.2 and cpeGNU/22.12
@@ -42,7 +47,10 @@ class lumi_gromacs_mpi(gromacs_check):
         },
     }
 
-    tags = {'contrib/22.08', 'contrib/23.09'}
+    @run_after('init')
+    def apply_module_ver(self):
+        module = f'GROMACS/{self.module_ver}'
+        self.modules = [module]
 
     @run_before('run')
     def setup_run(self):
