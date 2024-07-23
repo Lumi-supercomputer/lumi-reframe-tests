@@ -42,7 +42,7 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def prepare_test(self):
-        self.descr = f'GROMACS {self.benchmark_info['name']} GPU benchmark' 
+        self.descr = f"GROMACS {self.benchmark_info['name']} GPU benchmark"
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                       'gromacs-benchmarks', 
                                        self.benchmark_info['name'],
