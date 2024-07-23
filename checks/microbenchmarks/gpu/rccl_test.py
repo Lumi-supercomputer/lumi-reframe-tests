@@ -5,13 +5,13 @@ from reframe.core.backends import getlauncher
 from reframe.utility.osext import cray_cdt_version
 
 @rfm.simple_test
-class rccl_test(rfm.RegressionTest):
+class rccl_test_allreduce(rfm.RegressionTest):
     descr = 'Compile and run rccl-test'
     build_system = 'CMake'
     repo_name = 'rccl-tests'
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeGNU']
-    modules =['LUMI/22.12','partition/G','rocm', 'buildtools/22.12', 'aws-ofi-rccl']
+    modules =['rocm', 'buildtools', 'aws-ofi-rccl']
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
@@ -40,8 +40,68 @@ class rccl_test(rfm.RegressionTest):
             'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
             'NCCL_NET_GDR_LEVEL': '3',
             'MPICH_GPU_SUPPORT_ENABLED': '1',
+            'CXI_FORK_SAFE': '1',
+            'CXI_FORK_SAFE_HP': '1',
+            'FI_CXI_DISABLE_CQ_HUGETLB': '1',
         }
     
+    @run_before('run')
+    def set_cpu_binding(self):
+         self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
+
+    @sanity_function
+    def check_last_line(self):
+        return sn.assert_found(r'Avg bus bandwidth', self.stdout)
+
+    @performance_function('GB/s')
+    def busbw(self):
+        return sn.extractsingle(
+            r'^\s+134217728.+\s+(?P<busbw>\S+)\s+\S+$',
+            self.stdout, 'busbw', float
+        )
+
+    @performance_function('GB/s')
+    def algbw(self):
+        return sn.extractsingle(
+            r'^\s+134217728.+\s+(?P<algbw>\S+)\s+\S+\s+\S+$',
+            self.stdout, 'algbw', float
+        )
+
+@rfm.simple_test
+class rccl_test_allreduce_containerized(rfm.RunOnlyRegressionTest):
+    valid_systems = ['lumi:gpu']
+    valid_prog_environs = ['builtin']
+    container_platform = 'Singularity'
+    num_tasks = 16
+    num_tasks_per_node = 8
+    num_gpus_per_node = 8
+    executable_opts = ['-b 8', '-e 128M', '-f 2', '-g 1']
+    exclusive_access = True
+
+    reference = {
+        'lumi:gpu': {
+            'busbw': (85.00, -0.05, None, 'GB/s'),
+            'algbw': (45.00, -0.05, None, 'GB/s'),
+        }
+    }
+
+    @run_before('run')
+    def set_launch_settings(self):
+        self.container_platform.image = '/appl/local/containers/sif-images/lumi-rocm-rocm-5.6.1.sif'
+        self.container_platform.command = '/opt/rccltests/all_reduce_perf -z 1 -b 2M -e 2048M -f 2 -g 1 -t 1 -R 1 -n 80 -w 5 -d half'
+        self.env_vars = {
+            'NCCL_DEBUG': 'INFO',
+            'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
+            'NCCL_NET_GDR_LEVEL': '3',
+            'CXI_FORK_SAFE': '1',
+            'CXI_FORK_SAFE_HP': '1',
+            'FI_CXI_DISABLE_CQ_HUGETLB': '1',
+            'SINGULARITY_BIND':'/var/spool/slurmd:/var/spool/slurmd,'
+                                '/opt/cray:/opt/cray,'
+                                '/usr/lib64/libcxi.so.1:/usr/lib64/libcxi.so.1,'
+                                '/usr/lib64/libjansson.so.4:/usr/lib64/libjansson.so.4'
+        }
+
     @run_before('run')
     def set_cpu_binding(self):
          self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
