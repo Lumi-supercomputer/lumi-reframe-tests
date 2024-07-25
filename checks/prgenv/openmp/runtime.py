@@ -14,6 +14,7 @@ class OpenMPRuntime(rfm.RunOnlyRegressionTest):
     use_multithreading= None
 
     maintainers = ['mszpindler']
+    tags = {'craype'}
 
     @run_after('init')
     def set_executable(self):
