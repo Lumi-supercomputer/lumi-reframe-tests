@@ -141,9 +141,9 @@ class Net(nn.Module):
 def partition_dataset(rank):
   """ Partitioning MNIST """
   dataset = datasets.MNIST(
-    './data{}'.format(rank),
+    '/project/project_462000008/datasets/mnist',
     train=True,
-    download=True,
+    download=False,
     transform=transforms.Compose([
       transforms.ToTensor(),
       transforms.Normalize((0.1307,), (0.3081,))

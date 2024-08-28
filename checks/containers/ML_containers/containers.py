@@ -11,6 +11,7 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
+    exclusive_access = True
 
     @run_before('run')
     def set_launch_settings(self):
@@ -20,14 +21,20 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
             'SINGULARITY_BIND':'/var/spool/slurmd:/var/spool/slurmd,'
                                 '/opt/cray:/opt/cray,'
                                 '/usr/lib64/libcxi.so.1:/usr/lib64/libcxi.so.1,'
-                                '/usr/lib64/libjansson.so.4:/usr/lib64/libjansson.so.4'
+                                '/usr/lib64/libjansson.so.4:/usr/lib64/libjansson.so.4,'
+                                '/project/project_462000008/datasets'
         }
-        self.job.launcher.options = ['--cpu-bind=map_cpu:49,57,17,25,1,9,33,41']
+        self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
 
 @rfm.simple_test
 class test_pytorch_container(singularity_container_image):
     valid_prog_environs = ['builtin']
-    container = parameter(['/appl/local/containers/sif-images/lumi-pytorch-rocm-5.5.1-python-3.10-pytorch-v2.0.1.sif','/appl/local/containers/sif-images/lumi-pytorch-rocm-5.6.1-python-3.10-pytorch-v2.1.0.sif'])
+    container = parameter([
+        '/project/project_462000008/containers/lumi-pytorch-rocm-5.7.3-python-3.12-pytorch-v2.2.2-dockerhash-5c27c559a371.sif',
+        '/project/project_462000008/containers/lumi-pytorch-rocm-6.0.3-python-3.12-pytorch-v2.3.1-dockerhash-c2cfdd3e6ad8.sif',
+        '/project/project_462000008/containers/lumi-pytorch-rocm-6.1.3-python-3.12-pytorch-v2.4.0-dockerhash-4a501aa4c1ea.sif',
+        '/project/project_462000008/containers/lumi-pytorch-rocm-6.2.0-python-3.10-pytorch-v2.3.0-dockerhash-e84685c13eba.sif',
+    ])
     reference = {
             'lumi:gpu': {
                 'training_time' : (13.00, None, 0.1, 's'),
@@ -74,7 +81,7 @@ class test_tensorflow_container(singularity_container_image):
     @run_before('run')
     def set_container_variables(self):
         self.sourcesdir = 'src/tensorflow'
-        self.container_platform.image = '/appl/local/containers/sif-images/lumi-tensorflow-rocm-5.5.1-python-3.10-tensorflow-2.11.1-horovod-0.28.1.sif'
+        self.container_platform.image = '/project/project_462000008/containers/lumi-tensorflow-rocm-6.2.0-python-3.10-tensorflow-2.16.1-horovod-0.28.1-dockerhash-56a00af8ac92.sif'
         self.container_platform.command = 'bash run-tensorflow.sh'
 
 
@@ -109,6 +116,6 @@ class test_container_rccl(singularity_container_image):
     @run_before('run')
     def set_container_variables(self):
         self.sourcesdir = 'src/rccl'
-        self.container_platform.image = '/appl/local/containers/sif-images/lumi-tensorflow-rocm-5.5.1-python-3.10-tensorflow-2.11.1-horovod-0.28.1.sif'
+        self.container_platform.image = '/project/project_462000008/containers/lumi-tensorflow-rocm-6.2.0-python-3.10-tensorflow-2.16.1-horovod-0.28.1-dockerhash-56a00af8ac92.sif'
         self.container_platform.command = 'bash run.sh'
 
