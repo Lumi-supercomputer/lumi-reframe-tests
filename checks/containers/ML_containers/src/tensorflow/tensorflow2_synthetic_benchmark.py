@@ -17,6 +17,9 @@ import os
 import numpy as np
 import timeit
 
+os.environ['TF_USE_LEGACY_KERAS']='1'
+#os.environ["KERAS_BACKEND"] = "tensorflow"
+
 import tensorflow as tf
 import horovod.tensorflow as hvd
 from tensorflow.keras import applications
