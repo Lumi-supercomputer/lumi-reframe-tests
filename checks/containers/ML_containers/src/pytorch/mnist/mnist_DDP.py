@@ -135,15 +135,15 @@ class Net(nn.Module):
     x = F.relu(self.fc1(x))
     x = F.dropout(x, training=self.training)
     x = self.fc2(x)
-    return F.log_softmax(x)
+    return F.log_softmax(x, dim=1)
 
 
 def partition_dataset(rank):
   """ Partitioning MNIST """
   dataset = datasets.MNIST(
-    './data{}'.format(rank),
+    '/project/project_462000008/datasets/mnist',
     train=True,
-    download=True,
+    download=False,
     transform=transforms.Compose([
       transforms.ToTensor(),
       transforms.Normalize((0.1307,), (0.3081,))
@@ -162,9 +162,8 @@ def partition_dataset(rank):
 def average_gradients(model):
   """ Gradient averaging. """
   size = float(dist.get_world_size())
-  group = dist.new_group([0])
   for param in model.parameters():
-    dist.all_reduce(param.grad.data, op=dist.reduce_op.SUM, group=group)
+    dist.all_reduce(param.grad.data, op=dist.ReduceOp.SUM)
     param.grad.data /= size
 
 

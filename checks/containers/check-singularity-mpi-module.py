@@ -18,7 +18,7 @@ class base_container_mpi(rfm.RunOnlyRegressionTest):
 
     @run_before('run')
     def set_container_variables(self):
-        self.container_platform.image = '/appl/local/containers/sif-images/lumi-mpi4py-rocm-5.4.5-python-3.10-mpi4py-3.1.4.sif'
+        self.container_platform.image = '/project/project_462000008/containers/lumi-mpi4py-rocm-6.2.0-python-3.12-mpi4py-3.1.6-dockerhash-91d951ab9d81.sif'
         self.container_platform.command = '/opt/osu/libexec/osu-micro-benchmarks/mpi/pt2pt/osu_bw'
         self.env_vars = {
             'SINGULARITY_BIND':'/var/spool/slurmd:/var/spool/slurmd,'

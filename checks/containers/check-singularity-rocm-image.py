@@ -19,9 +19,9 @@ class singularity_rocm_image(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class test_rocm_container(singularity_rocm_image):
     valid_prog_environs = ['builtin']
-    rocm_version = parameter(['5.5.1', '5.6.1'])
+    rocm_version = parameter(['6.0.3-dockerhash-1ada3e019646', '6.2.0-dockerhash-c8e37dff2e91', '6.1.3-dockerhash-4a063f050ed7'])
 
     @run_before('run')
     def set_container_variables(self):
-        self.container_platform.image = f'/appl/local/containers/sif-images/lumi-rocm-rocm-{self.rocm_version}.sif'
+        self.container_platform.image = f'/project/project_462000008/containers/lumi-rocm-rocm-{self.rocm_version}.sif'
         self.container_platform.command = 'rocminfo'
