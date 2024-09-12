@@ -23,5 +23,9 @@ class test_rocm_container(singularity_rocm_image):
 
     @run_before('run')
     def set_container_variables(self):
-        self.container_platform.image = f'/project/project_462000008/containers/lumi-rocm-rocm-{self.rocm_version}.sif'
+        self.container_platform.image = os.path.join(
+                self.current_system.resourcesdir,
+                'containers',
+                f'lumi-rocm-rocm-{self.rocm_version}.sif',
+                )
         self.container_platform.command = 'rocminfo'
