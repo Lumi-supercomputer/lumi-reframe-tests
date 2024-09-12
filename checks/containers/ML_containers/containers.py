@@ -60,7 +60,7 @@ class test_pytorch_container(singularity_container_image):
                 'containers',
                 f'lumi-pytorch-{self.cont_image}.sif',
                 )
-        self.container_platform.command = 'bash run-pytorch.sh'
+        self.container_platform.command = 'conda-python-distributed -u mnist_DDP.py --gpu --modelpath model'
 
 @rfm.simple_test
 class test_tensorflow_container(singularity_container_image):
