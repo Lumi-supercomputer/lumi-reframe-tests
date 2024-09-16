@@ -30,10 +30,10 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
 class test_pytorch_container(singularity_container_image):
     valid_prog_environs = ['builtin']
     cont_image = parameter([
-        'rocm-5.7.3-python-3.12-pytorch-v2.2.2-dockerhash-5c27c559a371.sif',
-        'rocm-6.0.3-python-3.12-pytorch-v2.3.1-dockerhash-c2cfdd3e6ad8.sif',
-        'rocm-6.1.3-python-3.12-pytorch-v2.4.0-dockerhash-4a501aa4c1ea.sif',
-        'rocm-6.2.0-python-3.10-pytorch-v2.3.0-dockerhash-e84685c13eba.sif',
+        'rocm-5.7.3-python-3.12-pytorch-v2.2.2-dockerhash-5c27c559a371',
+        'rocm-6.0.3-python-3.12-pytorch-v2.3.1-dockerhash-c2cfdd3e6ad8',
+        'rocm-6.1.3-python-3.12-pytorch-v2.4.0-dockerhash-4a501aa4c1ea',
+        'rocm-6.2.0-python-3.10-pytorch-v2.3.0-dockerhash-e84685c13eba',
     ])
     reference = {
             'lumi:gpu': {
@@ -60,7 +60,7 @@ class test_pytorch_container(singularity_container_image):
                 'containers',
                 f'lumi-pytorch-{self.cont_image}.sif',
                 )
-        self.container_platform.command = 'conda-python-distributed -u mnist_DDP.py --gpu --modelpath model'
+        self.container_platform.command = 'bash conda-python-distributed.sh -u mnist/mnist_DDP.py --gpu --modelpath model'
 
 @rfm.simple_test
 class test_tensorflow_container(singularity_container_image):
