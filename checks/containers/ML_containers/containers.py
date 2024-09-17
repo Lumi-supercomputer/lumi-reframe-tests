@@ -127,7 +127,7 @@ class test_container_rccl(singularity_container_image):
         self.container_platform.image = os.path.join(
                 self.current_system.resourcesdir,
                 'containers',
-                'lumi-tensorflow-rocm-6.2.0-python-3.10-tensorflow-2.16.1-horovod-0.28.1-dockerhash-56a00af8ac92.sif'
+                'lumi-pytorch-rocm-6.2.0-python-3.10-pytorch-v2.3.0-dockerhash-e84685c13eba.sif'
                 )
         self.container_platform.command = 'bash run.sh'
 
