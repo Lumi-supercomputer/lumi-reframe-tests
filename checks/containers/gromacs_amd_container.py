@@ -103,7 +103,11 @@ class lumi_gromacs_infinityhub_container(gromacs_check):
     def set_runtime(self):
         exec_cmd = ' '.join([self.executable, *self.executable_opts])
         if self.nb_impl == 'gpu':
-            self.container_platform.image = '/project/project_462000008/reframe_resources/gromacs-infinity-hub/gromacs_2022.3.amd1_174.sif'
+            self.container_platform.image = os.path.join(
+                self.current_system.resourcesdir,
+                'containers',
+                'gromacs_2022.3.amd1_174.sif'
+                )
             self.container_platform.command = exec_cmd
 
     @run_before('run')

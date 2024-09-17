@@ -13,6 +13,7 @@ class pytorch_distr_cnn_base(rfm.RunOnlyRegressionTest):
     num_gpus_per_node = 8
     env_vars = {
         'NCCL_DEBUG': 'INFO',
+        'SINGULARITY_LD_LIBRARY_PATH': '/opt/aws-ofi-rccl'
     }
     throughput_per_gpu = 193.98
     throughput_total = throughput_per_gpu * num_tasks
@@ -74,9 +75,9 @@ class pytorch_distr_cnn_container_direct(pytorch_distr_cnn_base):
     def set_container_variables(self):
         self.container_platform = 'Singularity'
         self.container_platform.image = os.path.join(
-            '/appl/local/containers',
-            'sif-images',
-            'lumi-pytorch-rocm-5.6.1-python-3.10-pytorch-v2.1.0.sif'
+                self.current_system.resourcesdir,
+                'containers',
+                'lumi-pytorch-rocm-6.0.3-python-3.12-pytorch-v2.3.1-dockerhash-c2cfdd3e6ad8.sif'
         )
         self.container_platform.command = 'bash conda-python-distributed.sh -u cnn_distr.py --gpu --modelpath model'
 
@@ -86,3 +87,4 @@ class pytorch_distr_cnn_container_direct(pytorch_distr_cnn_base):
             ('/usr/lib64/libcxi.so.1', '/usr/lib64/libcxi.so.1'),
             ('/usr/lib64/libjansson.so.4', '/usr/lib64/libjansson.so.4'),
         ]
+

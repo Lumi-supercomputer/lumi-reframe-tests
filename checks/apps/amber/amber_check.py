@@ -113,7 +113,7 @@ class amber_nve20_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
             ) from None
 
         benchmark_suite_name = 'Amber20_Benchmark_Suite'
-        benchmark_suite_dir = os.path.join(self.current_system.resourcesdir, 'amber', benchmark_suite_name)
+        benchmark_suite_dir = os.path.join(self.current_system.resourcesdir, 'datasets', 'amber', benchmark_suite_name)
         input_file_path = os.path.join(benchmark_suite_dir, 'PME', self.bench_name, self.input_file)
         top_file_path = os.path.join(benchmark_suite_dir, 'PME', 'Topologies', self.bench_name.split('_')[0] + '.prmtop')
         crd_file_path = os.path.join(benchmark_suite_dir, 'PME', 'Coordinates', self.bench_name.split('_')[0] + '.inpcrd')

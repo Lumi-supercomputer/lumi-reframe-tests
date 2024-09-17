@@ -59,4 +59,5 @@ class ds_comm_all_reduce(deepspeed_comm):
         self.container_platform = 'Singularity'
         self.container_platform.image = '$SIFPYTORCH'
         self.container_platform.command = f'bash conda-python-distributed.sh -u communication/all_reduce.py --scan --dist="{self.dist_mode}"'
+        self.container_platform.env_vars = {'NCCL_DEBUG': 'INFO'}
 

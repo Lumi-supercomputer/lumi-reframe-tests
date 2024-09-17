@@ -60,9 +60,10 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     def prepare_test(self):
         self.descr = f"GROMACS {self.benchmark_info['name']} benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})"
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
-                                      'gromacs-benchmarks', 
+                                      'datasets',
+                                      'gromacs',
                                        self.benchmark_info['name'],
-                                      'topol.tpr')
+                                      'pme_nvt.tpr')
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
@@ -100,8 +101,6 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
             'OMP_NUM_THREADS': '7',
             'OMP_PROC_BIND': 'close',
             'OMP_PLACES': 'cores',
-            #'OMP_DISPLAY_ENV': '1',
-            #'OMP_DISPLAY_AFFINITY': 'TRUE',
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
             'GMX_GPU_PME_DECOMPOSITION': '1',

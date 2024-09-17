@@ -63,8 +63,8 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
     def prepare_test(self):
         self.descr = f"GROMACS {self.benchmark_info['name']} GPU benchmark (update mode: {self.update_mode}, non-bonded: {self.nb_impl})"
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
-                                      'gromacs-benchmarks', 
-                                      'www.mpinat.mpg.de',
+                                      'datasets',
+                                      'gromacs',
                                       self.benchmark_info['name'],
                                       f"{self.benchmark_info['name']}.tpr")
         self.prerun_cmds = [

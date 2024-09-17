@@ -140,8 +140,13 @@ class Net(nn.Module):
 
 def partition_dataset(rank):
   """ Partitioning MNIST """
+  dataset_path = os.path.join(
+          '/rfm_resourcesdir',
+          'datasets',
+          'mnist',
+          )
   dataset = datasets.MNIST(
-    '/project/project_462000008/datasets/mnist',
+    dataset_path,
     train=True,
     download=False,
     transform=transforms.Compose([

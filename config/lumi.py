@@ -8,7 +8,7 @@ site_configuration = {
             'hostnames': ['ln\d+-nmn', 'uan\d+-nmn.local', '\S+'],
             'modules_system': 'lmod',
             'modules': ['LUMI'],
-            'resourcesdir': '/projappl/%s/reframe_resources/' % project,
+            'resourcesdir': '/projappl/%s/' % project,
             'partitions': [
                 {
                     'name': 'login',
