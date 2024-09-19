@@ -21,18 +21,18 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
     module_ver = parameter([
-        '2024.1-cpeAMD-23.09-HeFFTe-2.4-AdaptiveCpp-23.10.0-rocm-5.4.6',
-        '2024.1-cpeAMD-23.09-VkFFT-rocm-5.6.1',
+        '2024.3-cpeAMD-24.03-rocm',
     ], loggable=True)
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
-    num_nodes = parameter([1,2], loggable=True)
+    num_nodes = parameter([1], loggable=True)
     num_gpus_per_node = 8
     time_limit = '10m'
     nb_impl = parameter(['gpu'])
     update_mode = parameter(['gpu', 'cpu'])
-    bonded_impl = parameter(['gpu'])
+    #bonded_impl = parameter(['gpu'])
+    bonded_impl = 'gpu'
     executable = 'gmx_mpi mdrun'
     tags = {'benchmark', 'contrib', 'gpu'}
     keep_files = ['md.log']
@@ -76,10 +76,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     def setup_runtime(self):
         self.num_tasks_per_node = 8
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
-        if self.num_nodes > 1:
-           npme_ranks = 2*self.num_nodes
-        else:
-           npme_ranks = 1
+        npme_ranks = 1
 
         self.executable_opts += [
             '-nsteps -1',
@@ -92,7 +89,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
             '-npme', f'{npme_ranks}',
             '-pme', 'gpu', 
             '-update', self.update_mode,
-            '-bonded', self.bonded_impl,
+            '-bonded', self.bonded_impl
             '-s benchmark.tpr'
         ]
         self.env_vars = {
@@ -100,8 +97,6 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
             'OMP_NUM_THREADS': '7',
             'OMP_PROC_BIND': 'close',
             'OMP_PLACES': 'cores',
-            #'OMP_DISPLAY_ENV': '1',
-            #'OMP_DISPLAY_AFFINITY': 'TRUE',
             'GMX_ENABLE_DIRECT_GPU_COMM': '1',
             'GMX_FORCE_GPU_AWARE_MPI': '1',
             'GMX_GPU_PME_DECOMPOSITION': '1',
