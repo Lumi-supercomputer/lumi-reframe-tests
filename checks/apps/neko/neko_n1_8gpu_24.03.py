@@ -1,5 +1,3 @@
-# adapted from Dardel (author: javier Aguilar Fruto)
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 import os
@@ -24,7 +22,7 @@ class MakeNeko(rfm.core.buildsystems.BuildSystem):
     srcfile = variable(str, type(None), value=None)
 
     def __init__(self):
-        self.makeneko = os.path.join('/project/project_462000008/jigong2/neko/0.7.2/', 'bin', 'makeneko')
+        self.makeneko = os.path.join('/project/project_462000008/jigong2/neko/0.8.1/', 'bin', 'makeneko')
 
     def emit_build_commands(self, environ):
         if not self.srcfile:
@@ -36,7 +34,7 @@ class NekoTestBase(rfm.RegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['PrgEnv-cray']
 
-    modules = ['LUMI/23.09', 'partition/G', 'rocm/5.2.3', 'craype-accel-amd-gfx90a', 'EasyBuild-user', 'json-fortran/8.3.0-cpeCray-23.09']
+    modules = ['LUMI/24.03', 'partition/G', 'rocm/6.0.3', 'craype-accel-amd-gfx90a', 'EasyBuild-user', 'json-fortran/8.3.0-cpeCray-24.03']
     scheme = parameter(os.getenv('NEKO_SCHEME', 'pnpn').split(','))
     case = variable(str)
 
@@ -203,7 +201,7 @@ class Tgv32(TgvBase):
     def set_reference(self):
         self.reference = {
             'lumi:gpu': {
-                'total_runtime': (440, -0.50, 0.05, 's'),
+                'total_runtime': (140, -0.50, 0.05, 's'),
                 'enstrophy_error': (9.018, -0.01, 0.01, '%'),
             }
         }
