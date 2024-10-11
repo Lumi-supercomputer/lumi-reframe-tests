@@ -24,7 +24,7 @@ class MakeNeko(rfm.core.buildsystems.BuildSystem):
     srcfile = variable(str, type(None), value=None)
 
     def __init__(self):
-        self.makeneko = os.path.join('/project/project_462000008/jigong2/neko/0.7.2/', 'bin', 'makeneko')
+        self.makeneko = 'makeneko'
 
     def emit_build_commands(self, environ):
         if not self.srcfile:
@@ -35,13 +35,14 @@ class MakeNeko(rfm.core.buildsystems.BuildSystem):
 class NekoTestBase(rfm.RegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['PrgEnv-cray']
+    exclusive_access = True
 
-    modules = ['LUMI/23.09', 'partition/G', 'rocm/5.2.3', 'craype-accel-amd-gfx90a', 'EasyBuild-user', 'json-fortran/8.3.0-cpeCray-23.09']
+    modules = ['Neko']
     scheme = parameter(os.getenv('NEKO_SCHEME', 'pnpn').split(','))
     case = variable(str)
 
-    extra_resources = {'gpu': {'num_gpus_per_node': '8'}}
-
+    num_gpus_per_node = 8
+    
     mesh_file = variable(str, value='')
     dt = variable(str, value='')
     T_end = variable(str, value='')
@@ -64,56 +65,38 @@ class NekoTestBase(rfm.RegressionTest):
                 f'mkdir -p {os.path.dirname(self.mesh_file)}',
                 f'cp "{src}" "{dst}"'
         ]
+   
+    @run_after('init')
+    def set_environment(self):
+        self.env_vars = {
+            'MPICH_GPU_SUPPORT_ENABLED': '1',
+        }
+
+    @run_after('init')
+    def add_select_gpu_wrapper(self):
+        self.prerun_cmds += [
+            'cat << EOF > select_gpu',
+            '#!/bin/bash',
+            'export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID',
+            'exec \$*',
+            'EOF',
+            'chmod +x ./select_gpu'
+        ]
+        self.executable = './select_gpu ' + self.executable
 
     @run_before('run')
     def make_case_file(self):
         case_file = os.path.join(self.stagedir, self.case)
-        case_template = case_file + '.template'
-
         self.executable_opts.append(self.case)
-
-        if os.path.exists(case_file):
-            pass
-        elif os.path.exists(case_template):
-            with open(case_template) as tf:
-                ts = tf.read()
-            template = string.Template(ts)
-
-            keys = {
-                'abstol_vel': self.abstol_vel['dp'],
-                'abstol_prs': self.abstol_prs['dp'],
-                'fluid_scheme': self.scheme,
-                'mesh_file': self.mesh_file,
-                'dt': self.dt,
-                'T_end': self.T_end,
-            }
-
-            ss = template.substitute(keys)
-            with open(case_file, 'w') as cf:
-                cf.write(ss)
-        else:
-            raise NekoError(f'Cannot find {case_file} or {case_template}')
 
     @run_before('run')
     def set_num_tasks(self):
-        gpu_device = get_gpu_device(self.current_partition)
-        if gpu_device is None:
-            raise NekoError("Device of type gpu not defined for partition!")
-        self.num_tasks = gpu_device.num_devices
-
-    @run_before('run')
-    def select_device(self):
-        try:
-            select_device = self.current_partition.extras['select_device']
-            self.executable_opts.insert(0, self.executable)
-            self.executable = select_device
-        except KeyError:
-            pass
+        self.num_tasks = self.num_gpus_per_node
 
     @run_before('run')
     def set_cpu_binding(self):
-        self.job.launcher.options = ['--cpu-bind="map_cpu:49,57,17,25,1,9,33,41"']
-
+        cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
+        self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
 
     @sanity_function
     def normal_end(self):
@@ -171,39 +154,16 @@ class TgvBase(NekoTestBase):
         self.build_system = MakeNeko()
         self.sourcepath = 'tgv.f90'
 
-    @sn.deferrable
-    def max_error(self, time_ens):
-        errs = []
-        for time, ens in time_ens:
-            # Round time to 3 decimals to find corresponding DNS sample
-            time = round(time, 3)
-            if time == 20.0:
-                # DNS data does not include the last timestep
-                continue
-            try:
-                dns = self.tgv_dns.enstrophy[time]
-            except KeyError:
-                raise NekoError(f'DNS enstrophy not sampled at {time}')
-            errs.append(100 * abs(1 - ens/dns))
-        return max(errs)
-
-    @performance_function('%')
-    def enstrophy_error(self):
-        time_ens = sn.extractall(r'Time: (\S+).*Enstrophy: (\S+)', self.stdout, (1, 2), (float, float))
-        return self.max_error(time_ens)
-
-
 @rfm.simple_test
-class Tgv32(TgvBase):
+class lumi_neko_tgv32(TgvBase):
     dofs = 8**3 * 32**3
-    # Where flow has become turbulent
-    first_workrate_timestep = 12000
+    first_workrate_timestep = 1200
 
     @run_before('performance')
     def set_reference(self):
         self.reference = {
             'lumi:gpu': {
-                'total_runtime': (440, -0.50, 0.05, 's'),
+                'total_runtime': (131, -0.50, 0.05, 's'),
                 'enstrophy_error': (9.018, -0.01, 0.01, '%'),
             }
         }
