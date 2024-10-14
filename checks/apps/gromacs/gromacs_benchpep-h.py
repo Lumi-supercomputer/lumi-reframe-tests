@@ -18,12 +18,12 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
     module_ver = parameter([
-        '2024.1-cpeAMD-23.09-HeFFTe-2.4-AdaptiveCpp-23.10.0-rocm-5.4.6',
+        '2024.3-cpeAMD-24.03-rocm',
     ], loggable=True)
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
-    num_nodes = parameter([2, 4], loggable=True)
+    num_nodes = parameter([1, 2], loggable=True)
     num_gpus_per_node = 8
     time_limit = '15m'
     nb_impl = parameter(['gpu'])
