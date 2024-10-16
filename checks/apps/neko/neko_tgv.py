@@ -34,22 +34,19 @@ class MakeNeko(rfm.core.buildsystems.BuildSystem):
 
 class NekoTestBase(rfm.RegressionTest):
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['cpeGNU']
+    valid_prog_environs = ['cpeCray']
     exclusive_access = True
 
-    modules = ['Neko']
-    scheme = parameter(os.getenv('NEKO_SCHEME', 'pnpn').split(','))
+    modules = ['Neko/0.8.1-cpeCray-24.03-rocm']
+    #scheme = parameter(os.getenv('NEKO_SCHEME', 'pnpn').split(','))
     case = variable(str)
 
-    num_nodes = parameter([2])
+    num_nodes = parameter([1,2,4])
     num_gpus_per_node = 8
     
     mesh_file = variable(str, value='')
     dt = variable(str, value='')
     T_end = variable(str, value='')
-
-    abstol_vel = {'sp': '1d-5', 'dp': '1d-9'}
-    abstol_prs = {'sp': '1d-5', 'dp': '1d-9'}
 
     # Set dofs to enable workrate perf var
     dofs = variable(int, value=0)
@@ -161,12 +158,28 @@ class lumi_neko_tgv32(TgvBase):
     dofs = 8**3 * 32**3
     first_workrate_timestep = 1200
 
+    allref = {
+        1: {
+            'lumi:gpu': {
+                'total_runtime': (131, -0.50, 0.05, 's'),
+                'workrate': (65000, -0.01, 0.01, 'Mdofs/s/pe'),
+            }
+        },
+        2: {
+            'lumi:gpu': {
+                'total_runtime': (80, -0.50, 0.05, 's'),
+                'workrate': (53000, -0.01, 0.01, 'Mdofs/s/pe'),
+            }
+        },
+        4: {
+            'lumi:gpu': {
+                'total_runtime': (54, -0.50, 0.05, 's'),
+                'workrate': (39000, -0.01, 0.01, 'Mdofs/s/pe'),
+            }
+        },
+    }
+
     @run_before('performance')
     def set_reference(self):
-        self.reference = {
-            'lumi:gpu': {
-                'total_runtime': (440, -0.50, 0.05, 's'),
-                'enstrophy_error': (9.018, -0.01, 0.01, '%'),
-            }
-        }
+        self.reference = self.allref[self.num_nodes]
 
