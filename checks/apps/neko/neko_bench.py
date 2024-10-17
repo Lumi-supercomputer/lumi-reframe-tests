@@ -38,13 +38,14 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeCray']
     exclusive_access = True
+    time_limit = '15m'
 
     modules = ['Neko/0.8.1-cpeCray-24.03-rocm']
     case = 'tgv'
 
     makeneko = fixture(lumi_make_neko, scope='environment', variables={'case': case})
 
-    num_nodes = parameter([1,2,4])
+    num_nodes = parameter([1,2,4,8,16])
     num_gpus_per_node = 8
 
     size = parameter([32768, 262144], loggable=True)
@@ -158,7 +159,13 @@ class lumi_neko_bench(NekoTGVBase):
             }
         },
        262144: {
-            4: {
+            8: {
+                'lumi:gpu': {
+                    'total_runtime': (54, -0.50, 0.05, 's'),
+                    'workrate': (39000, -0.05, 0.05, 'Mdofs/s/pe'),
+                }
+            },
+            16: {
                 'lumi:gpu': {
                     'total_runtime': (54, -0.50, 0.05, 's'),
                     'workrate': (39000, -0.05, 0.05, 'Mdofs/s/pe'),
