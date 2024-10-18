@@ -8,7 +8,7 @@ site_configuration = {
             'hostnames': ['ln\d+-nmn', 'uan\d+-nmn.local', '\S+'],
             'modules_system': 'lmod',
             'modules': ['LUMI'],
-            'resourcesdir': '/projappl/%s/reframe_resources/' % project,
+            'resourcesdir': '/projappl/%s/' % project,
             'partitions': [
                 {
                     'name': 'login',
@@ -212,7 +212,9 @@ site_configuration = {
                     'type': 'filelog',
                     'prefix': '%(check_system)s/%(check_partition)s',
                     'level': 'info',
-                    'format': '%(check_job_completion_time)s|reframe %(version)s|%(check_info)s|jobid=%(check_jobid)s|num_tasks=%(check_num_tasks)s|%(check_perf_var)s=%(check_perf_value)s|ref=%(check_perf_ref)s (l=%(check_perf_lower_thres)s, u=%(check_perf_upper_thres)s)|%(check_perf_unit)s',   # noqa: E501
+                    #check fields: name|build_locally|build_time_limit|descr|display_name|env_vars|environ|exclusive_access|executable|executable_opts|extra_resources|hashcode|job_completion_time_unix|job_exitcode|job_nodelist|jobid|keep_files|local|maintainers|max_pending_time|modules|name|num_cpus_per_task|num_gpus_per_node|num_nodes|num_tasks|num_tasks_per_core|num_tasks_per_node|num_tasks_per_socket|outputdir|partition|perf_var=perf_value perf_unit|postbuild_cmds|postrun_cmds|prebuild_cmds|prefix|prerun_cmds|readonly_files|short_name|sourcepath|sourcesdir|stagedir|strict_check|system|tags|time_limit|unique_name|use_multithreading|valid_prog_environs|valid_systems|variables
+                    'format': '%(check_job_completion_time)s,%(check_short_name)s,%(check_hashcode)s,%(check_modules)s,%(check_module_ver)s,%(check_name)s,%(check_system)s,%(check_partition)s,%(check_environ)s,jobid=%(check_jobid)s,num_nodes=%(check_num_nodes)s,num_task=%(check_num_tasks)s,num_tasks_per_node=%(check_num_tasks_per_node)s,num_gpus_per_node=%(check_num_gpus_per_node)s,%(check_perfvalues)s',
+                    'format_perfvars': '%(check_perf_var)s=%(check_perf_value)s %(check_perf_unit)s,',
                     'datefmt': '%FT%T%:z',
                     'append': True
                 },
