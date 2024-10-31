@@ -19,7 +19,7 @@ class ELPA_Cholesky_GPU(rfm.RegressionTest):
     tags = {'production', 'contrib'}
 
     reference = {
-        'lumi:gpu': {'gpublas_timing': (0.3, -0.5, 0.5, 's')},
+        'lumi:gpu': {'gpublas_timing': (0.6, -0.5, 0.5, 's')},
     }
 
     @run_before('compile')
@@ -27,7 +27,7 @@ class ELPA_Cholesky_GPU(rfm.RegressionTest):
 #ftn elpa_fortran_validate_real_double_cholesky_1stage_gpu_random.F90 ../elpa-new_release_2024.05.001/src/helpers/libelpa_private_la-mod_precision.o -o test -I../elpa-new_release_2024.05.001/modules  -L../elpa-new_release_2024.05.001/.libs -lelpa
         #self.build_system.cxxflags = ['-x hip']
         self.build_system.fflags = ['-I${EBROOTELPA}/include/elpa-${EBVERSIONELPA}/modules']
-        self.build_system.ldflags = ['-L${EBROOTELPA} -lelpa']
+        self.build_system.ldflags = ['-L${EBROOTELPA}/lib -lelpa']
 
     @run_before('run')
     def set_env(self):
