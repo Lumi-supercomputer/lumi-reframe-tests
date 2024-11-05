@@ -10,6 +10,8 @@ class MultiLaunchTest(rfm.RunOnlyRegressionTest):
     num_tasks_per_node = 3
     num_nodes = 3
     num_tasks = num_nodes*num_tasks_per_node
+    # Required to mitigate error-configuring-interconnect
+    exclusive_access = True
 
     tags = {'production', 'lumi'}
 
@@ -18,7 +20,7 @@ class MultiLaunchTest(rfm.RunOnlyRegressionTest):
         cmd = self.job.launcher.run_command(self.job)
         background_cmd = 'hostname'
         self.prerun_cmds = [
-            f'{cmd} --overlap -N {self.num_nodes} -n {self.num_tasks_per_node} {background_cmd} &'
+            f'{cmd} --overlap --exact -N {self.num_nodes} -n {self.num_tasks_per_node} {background_cmd} &'
             for n in range(1, self.num_nodes+1)
         ]
 
