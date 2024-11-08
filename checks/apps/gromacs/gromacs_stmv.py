@@ -71,6 +71,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     def apply_module_ver(self):
         module = f'GROMACS/{self.module_ver}'
         self.modules = [module]
+        self.modules = [module] + ['rocm']
 
     @run_after('init')
     def setup_runtime(self):
@@ -89,7 +90,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
             '-npme', f'{npme_ranks}',
             '-pme', 'gpu', 
             '-update', self.update_mode,
-            '-bonded', self.bonded_impl
+            '-bonded', self.bonded_impl,
             '-s benchmark.tpr'
         ]
         self.env_vars = {
