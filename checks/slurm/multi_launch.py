@@ -2,6 +2,8 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
 
+# This tries to fill up a node with multiple sub-job steps
+# launched with multiple srun calls interleaved
 @rfm.simple_test
 class MultiLaunchTest(rfm.RunOnlyRegressionTest):
     valid_systems = ['lumi:gpu', 'lumi:small']
@@ -81,3 +83,43 @@ class MultiLaunchGPUTest(rfm.RunOnlyRegressionTest):
 
         gpu_bind = sn.extractall(r'\(GCD\S+\/CCD(?P<number>\S+)\)', self.stdout, 'number', int)
         return sn.assert_eq(cpu_bind, gpu_bind)
+
+# This tries to overcommit nodes with multiple job steps
+# launched with multiple srun calls overlapped
+@rfm.simple_test
+class OverlapLaunchTest(rfm.RunOnlyRegressionTest):
+    valid_systems = ['lumi:small']
+    valid_prog_environs = ['builtin']
+    executable = 'wait'
+    num_tasks_per_node = 1
+    cpus_per_task = 128
+    num_nodes = 2
+    num_tasks = num_nodes*num_tasks_per_node
+    num_steps = 2
+    exclusive_access = True
+
+    tags = {'production', 'lumi'}
+
+    @run_before('run')
+    def pre_launch(self):
+        cmd = self.job.launcher.run_command(self.job)
+        background_cmd = './wrap.sh'
+        self.prerun_cmds = [
+            f'{cmd} --overlap {background_cmd} &'
+            for n in range(1, self.num_steps+1)
+        ]
+
+    @run_before('run')
+    def set_vni_opts(self):
+        self.job.options += ['--overcommit']
+        self.job.options += ['--network=job_vni,def_acs=1']
+
+    @run_before('run')
+    def set_launcher(self):
+        self.job.launcher = getlauncher('local')()
+
+    @sanity_function
+    def validate_test(self):
+        return sn.assert_eq(
+            sn.count(sn.extractall(r'nid\d+', self.stdout)), self.num_tasks*self.num_steps
+        )
