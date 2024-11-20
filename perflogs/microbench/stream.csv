@@ -1,2 +1,2 @@
 job_completion_time,short_name,hashcode,modules,module_ver,name,system,partition,environ,jobid,num_nodes,num_tasks,num_tasks_per_node,num_gpus_per_node,commit,Copy_var=Copy_value Copy_unit,Scale_var=Scale_value Scale_unit,Add_var=Add_value Add_unit,Triad_var=Triad_value Triad_unit
-2024-11-20T15:49:31+01:00,StreamAltTest,ebaf7967,,null,StreamAltTest,generic,default,builtin,17042,null,1,null,null,null,Copy=24574.1 MB/s, Scale=13868.3 MB/s, Add=15855.0 MB/s, Triad=15949.5 MB/s,
+2024-11-20T15:49:31+01:00,StreamAltTest,ebaf7967,,null,StreamAltTest,generic,default,builtin,17042,null,1,null,null,null,Copy=24574.1 MB/s, Scale=13868.3 MB/s, Add=15855.0 MB/s, Triad=15949.5 MB/s
