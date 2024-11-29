@@ -1,0 +1,3 @@
+job_completion_time	system:partition	short_name	hashcode	environ	modules	jobid	num_nodes	num_tasks	num_tasks_per_node	num_gpus_per_node	perf_var=perf_value perf_unit	
+2024-11-29T11:51:45+02:00	lumi:gpu	lumi_gromacs_stmv_1007789e	1007789e	cpeAMD	GROMACS/2024.3-cpeAMD-24.03-rocm,rocm/6.0.3,AdaptiveCpp/24.06	8562378	1	8	8	8	perf=76.928 ns/day	
+2024-11-29T11:57:43+02:00	lumi:gpu	lumi_gromacs_stmv_3f557903	3f557903	cpeAMD	GROMACS/2024.3-cpeAMD-24.03-rocm,rocm/6.0.3,AdaptiveCpp/24.06	8562380	1	8	8	8	perf=102.107 ns/day	
