@@ -1,0 +1,2 @@
+job_completion_time	system:partition	display_name	hashcode	commit	environ	modules	jobid	num_nodes	num_tasks	num_tasks_per_node	num_gpus_per_node	Copy_var=Copy_value Copy_unit	Scale_var=Scale_value Scale_unit	Add_var=Add_value Add_unit	Triad_var=Triad_value Triad_unit	
+2024-12-02T13:44:27+01:00	generic:default	StreamAltTest	ebaf7967	null	builtin		602	null	1	null	null	Copy=24591.0 MB/s	Scale=13954.4 MB/s	Add=14987.2 MB/s	Triad=15364.6 MB/s	
