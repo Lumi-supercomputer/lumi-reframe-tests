@@ -1,2 +1,2 @@
-job_completion_time     system:partition        display_name    hashcode        environ modules jobid   num_nodes       num_tasks       num_tasks_per_node      num_gpus_per_node       quad_var=quad_value quad_unit    dual_var=dual_value dual_unit   single_var=single_value single_unit
-2024-12-02T15:03:48+02:00       lumi:gpu        comm_scope      3c4c2ba6        builtin buildtools,rocm 8587714 null    1       null    8       quad=151.93983680512 GB/s       dual=76.69179503083521 GB/s     single=38.3728484352 GB/s
+job_completion_time	system:partition	display_name	hashcode	environ	modules	jobid	num_nodes	num_tasks	num_tasks_per_node	num_gpus_per_node	quad_var=quad_value quad_unit	dual_var=dual_value dual_unit	single_var=single_value single_unit	
+2024-12-02T15:03:48+02:00	lumi:gpu	comm_scope	3c4c2ba6	builtin	buildtools,rocm	8587714	null	1	null	8	quad=151.93983680512 GB/s	dual=76.69179503083521 GB/s	single=38.3728484352 GB/s	
