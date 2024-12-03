@@ -17,13 +17,13 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
 
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
-    module_ver = parameter([
-        '2024.1-cpeAMD-23.09-HeFFTe-2.4-AdaptiveCpp-23.10.0-rocm-5.4.6',
-    ], loggable=True)
+
+    release_environ = parameter(['production', 'leading']) 
+
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
-    num_nodes = parameter([2, 4], loggable=True)
+    num_nodes = parameter([1, 2], loggable=True)
     num_gpus_per_node = 8
     time_limit = '15m'
     nb_impl = parameter(['gpu'])
@@ -34,30 +34,28 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
 
     allref = {
         1: {
-            'gpu': { # update=gpu, gpu resident mode
-                'benchPEP-h': (7.3, -0.05, 0.05, 'ns/day'),
-            },
-            'cpu': { # update=cpu, force offload mode
-                'benchPEP-h': (4.6, -0.05, 0.05, 'ns/day'),
-            },
+            'gpu': (7.3, -0.05, 0.05, 'ns/day'), # update=gpu, gpu resident mode
+            'cpu': (4.6, -0.05, 0.05, 'ns/day'), # update=cpu, force offload mode
         },
         2: {
-            'gpu': { # update=gpu, gpu resident mode
-                'benchPEP-h': (13.2, -0.075, 0.075, 'ns/day'),
-            },
-            'cpu': { # update=cpu, force offload mode
-                'benchPEP-h': (9.5, -0.05, 0.05, 'ns/day'),
-            },
+            'gpu': (13.2, -0.075, 0.075, 'ns/day'), # update=gpu, gpu resident mode
+            'cpu': (9.5, -0.05, 0.05, 'ns/day'), # update=cpu, force offload mode
         },
         4: {
-            'gpu': { # update=gpu, gpu resident mode
-                'benchPEP-h': (13.2, -0.05, None, 'ns/day'),
-            },
-            'cpu': { # update=cpu, force offload mode
-                'benchPEP-h': (9.5, -0.05, 0.05, 'ns/day'),
-            },
+            'gpu': (13.2, -0.05, None, 'ns/day'), # update=gpu, gpu resident mode
+            'cpu': (9.5, -0.05, 0.05, 'ns/day'), # update=cpu, force offload mode
         },
     }
+
+    @run_after('init')
+    def set_module_environ(self):
+        match self.release_environ:
+            case 'production':
+                self.modules = ['GROMACS/2024.3-cpeAMD-24.03-rocm', 'rocm/6.0.3', 'AdaptiveCpp/24.06']
+                self.tags = {'benchmark', 'production', 'contrib', 'gpu'}
+            case 'leading':
+                self.modules = ['GROMACS/2024.4-cpeAMD-24.03-rocm', 'rocm/6.2.2', 'AdaptiveCpp/24.06']
+                self.tags = {'benchmark', 'testing', 'contrib', 'gpu'}
 
     @run_after('init')
     def prepare_test(self):
@@ -70,11 +68,6 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
-
-    @run_after('init')
-    def apply_module_ver(self):
-        module = f'GROMACS/{self.module_ver}'
-        self.modules = [module]
 
     @run_after('init')
     def setup_runtime(self):
@@ -143,7 +136,7 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
     @deferrable
     def verlet_buff_tol(self):
         return sn.extractsingle(r'\s+verlet-buffer-tolerance\s+\=\s+(\S+)', 'md.log', 1, float)
-    
+
     @sanity_function
     def assert_energy_readout(self):
         return sn.all([
@@ -163,7 +156,7 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def setup_run(self):
         try:
-            found = self.allref[self.num_nodes][self.update_mode][self.benchmark_info['name']]
+            found = self.allref[self.num_nodes][self.update_mode]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) of '
                       f'{self.bench_name!r} is not supported on {arch!r}')
@@ -171,6 +164,6 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
         # Setup performance references
         self.reference = {
             '*': {
-                'perf': self.allref[self.num_nodes][self.update_mode][self.benchmark_info['name']]
+                'perf': self.allref[self.num_nodes][self.update_mode]
             }
         }

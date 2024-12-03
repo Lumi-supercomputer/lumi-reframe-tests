@@ -20,41 +20,43 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
 
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
-    module_ver = parameter([
-        '2024.1-cpeAMD-23.09-HeFFTe-2.4-AdaptiveCpp-23.10.0-rocm-5.4.6',
-        '2024.1-cpeAMD-23.09-VkFFT-rocm-5.6.1',
-    ], loggable=True)
+
+    release_environ = parameter(['production', 'leading']) 
+
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
-    num_nodes = parameter([1,2], loggable=True)
+    num_nodes = parameter([1], loggable=True)
     num_gpus_per_node = 8
     time_limit = '10m'
     nb_impl = parameter(['gpu'])
     update_mode = parameter(['gpu', 'cpu'])
-    bonded_impl = parameter(['gpu'])
+    #bonded_impl = parameter(['gpu'])
+    bonded_impl = 'gpu'
     executable = 'gmx_mpi mdrun'
     tags = {'benchmark', 'contrib', 'gpu'}
     keep_files = ['md.log']
 
     allref = {
         1: {
-            'gpu': { # update=gpu, gpu resident mode
-                'stmv_v2': (100.0, -0.05, None, 'ns/day'),
-            },
-            'cpu': { # update=cpu, force offload mode
-                'stmv_v2': (42.3, -0.05, None, 'ns/day'),
-            },
+            'gpu': (100.0, -0.05, None, 'ns/day'), # update=gpu, gpu resident mode
+            'cpu': (75.0, -0.05, None, 'ns/day'), # update=cpu, force offload mode
         },
         2: {
-            'gpu': { # update=gpu, gpu resident mode
-                'stmv_v2': (76.9, -0.05, None, 'ns/day'),
-            },
-            'cpu': { # update=cpu, force offload mode
-                'stmv_v2': (62.6, -0.05, None, 'ns/day'),
-            },
+            'gpu': (76.9, -0.05, None, 'ns/day'), # update=gpu, gpu resident mode
+            'cpu': (62.6, -0.05, None, 'ns/day'), # update=cpu, force offload mode
         },
     }
+
+    @run_after('init')
+    def set_module_environ(self):
+        match self.release_environ:
+            case 'production':
+                self.modules = ['GROMACS/2024.3-cpeAMD-24.03-rocm', 'rocm/6.0.3', 'AdaptiveCpp/24.06']
+                self.tags = {'benchmark', 'production', 'contrib', 'gpu'}
+            case 'leading':
+                self.modules = ['GROMACS/2024.4-cpeAMD-24.03-rocm', 'rocm/6.2.2', 'AdaptiveCpp/24.06']
+                self.tags = {'benchmark', 'testing', 'contrib', 'gpu'}
 
     @run_after('init')
     def prepare_test(self):
@@ -69,18 +71,10 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         ]
 
     @run_after('init')
-    def apply_module_ver(self):
-        module = f'GROMACS/{self.module_ver}'
-        self.modules = [module]
-
-    @run_after('init')
     def setup_runtime(self):
         self.num_tasks_per_node = 8
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
-        if self.num_nodes > 1:
-           npme_ranks = 2*self.num_nodes
-        else:
-           npme_ranks = 1
+        npme_ranks = 1
 
         self.executable_opts += [
             '-nsteps -1',
@@ -143,7 +137,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     @deferrable
     def verlet_buff_tol(self):
         return sn.extractsingle(r'\s+verlet-buffer-tolerance\s+\=\s+(\S+)', 'md.log', 1, float)
-    
+
     @sanity_function
     def assert_energy_readout(self):
         return sn.all([
@@ -163,7 +157,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def setup_run(self):
         try:
-            found = self.allref[self.num_nodes][self.update_mode][self.benchmark_info['name']]
+            found = self.allref[self.num_nodes][self.update_mode]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) of '
                       f'{self.bench_name!r} is not supported on {arch!r}')
@@ -171,6 +165,6 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         # Setup performance references
         self.reference = {
             '*': {
-                'perf': self.allref[self.num_nodes][self.update_mode][self.benchmark_info['name']]
+                'perf': self.allref[self.num_nodes][self.update_mode]
             }
         }
