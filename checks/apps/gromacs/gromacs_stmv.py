@@ -62,9 +62,10 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     def prepare_test(self):
         self.descr = f"GROMACS {self.benchmark_info['name']} benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})"
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
-                                      'gromacs-benchmarks', 
+                                      'datasets',
+                                      'gromacs',
                                        self.benchmark_info['name'],
-                                      'topol.tpr')
+                                      'pme_nvt.tpr')
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
