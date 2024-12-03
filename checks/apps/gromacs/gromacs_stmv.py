@@ -22,11 +22,6 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['cpeAMD']
 
     release_environ = parameter(['production', 'leading']) 
-    #module_ver = parameter([
-    #    '2024.3-cpeAMD-24.03-rocm',
-    #], loggable=True)
-
-    #module_ver = variable(str, loggable=True)
 
     maintainers = ['mszpindler']
     use_multithreading = False
@@ -44,23 +39,14 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
 
     allref = {
         1: {
-            'gpu': { # update=gpu, gpu resident mode
-                'stmv_v2': (100.0, -0.05, None, 'ns/day'),
-            },
-            'cpu': { # update=cpu, force offload mode
-                'stmv_v2': (42.3, -0.05, None, 'ns/day'),
-            },
+            'gpu': (100.0, -0.05, None, 'ns/day'), # update=gpu, gpu resident mode
+            'cpu': (75.0, -0.05, None, 'ns/day'), # update=cpu, force offload mode
         },
         2: {
-            'gpu': { # update=gpu, gpu resident mode
-                'stmv_v2': (76.9, -0.05, None, 'ns/day'),
-            },
-            'cpu': { # update=cpu, force offload mode
-                'stmv_v2': (62.6, -0.05, None, 'ns/day'),
-            },
+            'gpu': (76.9, -0.05, None, 'ns/day'), # update=gpu, gpu resident mode
+            'cpu': (62.6, -0.05, None, 'ns/day'), # update=cpu, force offload mode
         },
     }
-
 
     @run_after('init')
     def set_module_environ(self):
@@ -82,12 +68,6 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
-
-    #@run_after('init')
-    #def apply_module_ver(self):
-    #    module = f'GROMACS/{self.module_ver}'
-    #    self.modules = [module]
-    #    self.modules = [module] + ['rocm']
 
     @run_after('init')
     def setup_runtime(self):
@@ -156,7 +136,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     @deferrable
     def verlet_buff_tol(self):
         return sn.extractsingle(r'\s+verlet-buffer-tolerance\s+\=\s+(\S+)', 'md.log', 1, float)
-    
+
     @sanity_function
     def assert_energy_readout(self):
         return sn.all([
@@ -176,7 +156,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def setup_run(self):
         try:
-            found = self.allref[self.num_nodes][self.update_mode][self.benchmark_info['name']]
+            found = self.allref[self.num_nodes][self.update_mode]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) of '
                       f'{self.bench_name!r} is not supported on {arch!r}')
@@ -184,6 +164,6 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         # Setup performance references
         self.reference = {
             '*': {
-                'perf': self.allref[self.num_nodes][self.update_mode][self.benchmark_info['name']]
+                'perf': self.allref[self.num_nodes][self.update_mode]
             }
         }
