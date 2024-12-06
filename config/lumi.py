@@ -210,11 +210,25 @@ site_configuration = {
             'handlers_perflog': [
                 {
                     'type': 'filelog',
-                    'prefix': '%(check_system)s/%(check_partition)s',
+                    'basedir': './perflogs',
+                    'prefix': '%(check_partition)s/%(check_name)s',
                     'level': 'info',
                     #check fields: name|build_locally|build_time_limit|descr|display_name|env_vars|environ|exclusive_access|executable|executable_opts|extra_resources|hashcode|job_completion_time_unix|job_exitcode|job_nodelist|jobid|keep_files|local|maintainers|max_pending_time|modules|name|num_cpus_per_task|num_gpus_per_node|num_nodes|num_tasks|num_tasks_per_core|num_tasks_per_node|num_tasks_per_socket|outputdir|partition|perf_var=perf_value perf_unit|postbuild_cmds|postrun_cmds|prebuild_cmds|prefix|prerun_cmds|readonly_files|short_name|sourcepath|sourcesdir|stagedir|strict_check|system|tags|time_limit|unique_name|use_multithreading|valid_prog_environs|valid_systems|variables
-                    'format': '%(check_job_completion_time)s,%(check_short_name)s,%(check_hashcode)s,%(check_modules)s,%(check_module_ver)s,%(check_name)s,%(check_system)s,%(check_partition)s,%(check_environ)s,jobid=%(check_jobid)s,num_nodes=%(check_num_nodes)s,num_task=%(check_num_tasks)s,num_tasks_per_node=%(check_num_tasks_per_node)s,num_gpus_per_node=%(check_num_gpus_per_node)s,%(check_perfvalues)s',
-                    'format_perfvars': '%(check_perf_var)s=%(check_perf_value)s %(check_perf_unit)s,',
+                     'format': (
+                        '%(check_job_completion_time)s\t'
+                        '%(check_system)s:%(check_partition)s\t'
+                        '%(check_short_name)s\t'
+                        '%(check_hashcode)s\t'
+                        '%(check_environ)s\t'
+                        '%(check_modules)s\t'
+                        '%(check_jobid)s\t'
+                        '%(check_num_nodes)s\t'
+                        '%(check_num_tasks)s\t'
+                        '%(check_num_tasks_per_node)s\t'
+                        '%(check_num_gpus_per_node)s\t'
+                        '%(check_perfvalues)s\t'
+                    ),
+                    'format_perfvars': '%(check_perf_var)s=%(check_perf_value)s %(check_perf_unit)s\t',
                     'datefmt': '%FT%T%:z',
                     'append': True
                 },
@@ -223,15 +237,24 @@ site_configuration = {
     ],
     'modes': [
         {
+            'name': 'benchmark',
+            'options': [
+                '--performance-report',
+                '--output=output/bench',
+                '--perflogdir=perflogs/bench/',
+                '--report-file=reports/bench/bench_report_{sessionid}.json',
+                '--tag=benchmark',
+                '--timestamp=%F_%H-%M-%S',
+                ]
+        },
+        {
             'name': 'maintenance',
             'options': [
                 '--exec-policy=async',
                 '--strict',
-                '--output=/project/%s/$USER/regression/maintenance' % project,
-                '--perflogdir=/project/%s/$USER/regression/maintenance/logs' % project,
-                '--stage=/scratch/%s/regression/maintenance/stage' % project,
-                '--report-file=/project/%s/$USER/regression/maintenance/reports/maint_report_{sessionid}.json' % project,
-                '-Jreservation=maintenance',
+                '--output=output/maint',
+                '--perflogdir=perflogs/maint',
+                '--report-file=reports/maint/maint_report_{sessionid}.json',
                 '--save-log-files',
                 '--tag=maintenance',
                 '--timestamp=%F_%H-%M-%S'
@@ -242,11 +265,9 @@ site_configuration = {
             'options': [
                 '--exec-policy=async',
                 '--strict',
-                '--output=/project/%s/$USER/regression/production' % project,
-                '--perflogdir=/project/%s/$USER/regression/production/logs' % project,
-                '--stage=/scratch/%s/regression/production/stage' % project,
-                '--report-file=/project/%s/$USER/regression/production/reports/prod_report_{sessionid}.json' % project,
-                '--save-log-files',
+                '--output=output/prod',
+                '--perflogdir=perflogs/prod',
+                '--report-file=reports/prod/prod_report_{sessionid}.json',
                 '--tag=production',
                 '--timestamp=%F_%H-%M-%S'
             ]
@@ -256,7 +277,7 @@ site_configuration = {
         {
             'check_search_path': ['checks/'],
             'check_search_recursive': True,
-            'remote_detect': False
+            'remote_detect': False,
         }
     ]
 }
