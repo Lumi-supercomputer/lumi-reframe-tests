@@ -1,0 +1,4 @@
+job_completion_time	system:partition	short_name	hashcode	environ	modules	jobid	num_nodes	num_tasks	num_tasks_per_node	num_gpus_per_node	total_runtime_var=total_runtime_value total_runtime_unit	workrate_var=workrate_value workrate_unit	
+2024-12-06T15:05:33+02:00	lumi:gpu	lumi_neko_bench_bae3ebb6	bae3ebb6	cpeCray	Neko/0.8.1-cpeCray-24.03-rocm	8646121	null	16	8	8	total_runtime=77.79808 s	workrate=53892.046038584784 Mdofs/s/pe	
+2024-12-06T15:15:22+02:00	lumi:gpu	lumi_neko_bench_8f3ecdbd	8f3ecdbd	cpeCray	Neko/0.8.1-cpeCray-24.03-rocm	8646125	null	8	8	8	total_runtime=128.4937 s	workrate=65357.666937356655 Mdofs/s/pe	
+2024-12-06T15:17:16+02:00	lumi:gpu	lumi_neko_bench_90b4f340	90b4f340	cpeCray	Neko/0.8.1-cpeCray-24.03-rocm	8646120	null	32	8	8	total_runtime=54.17394 s	workrate=38618.901502237146 Mdofs/s/pe	
