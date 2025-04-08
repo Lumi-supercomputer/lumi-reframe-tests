@@ -125,7 +125,7 @@ site_configuration = {
                         },
                         {
                             'name': '_rfm_gpu',
-                            'options': ['--gpus-per-node={num_gpus_per_node}']
+                            'options': ['--gpus-per-task={num_gpus_per_task}']
                         },
                     ],
                     'launcher': 'srun'
