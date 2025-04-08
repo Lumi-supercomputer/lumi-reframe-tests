@@ -14,6 +14,7 @@
     &END QS
     &SCF
       SCF_GUESS ATOMIC
+      IGNORE_CONVERGENCE_FAILURE T
       &OT ON
         MINIMIZER DIIS
       &END OT
