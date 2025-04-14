@@ -3,9 +3,13 @@ import reframe.utility.sanity as sn
 
 
 class cp2k_check(rfm.RunOnlyRegressionTest):
-    executable = 'cp2k.psmp'
     maintainers = ['mszpindler']
-    executable_opts = ['H2O-256.inp']
+
+    # TODO: Make sure that the GPU timings are meaningfull.
+    reference = {
+        'lumi:small': {'time': (152.644, None, 0.05, 's')},
+        'lumi:gpu': {'time': (165.425, None, 0.05, 's')},
+    }
 
     @sanity_function
     def assert_energy_diff(self):
@@ -36,34 +40,50 @@ class lumi_cp2k_cpu_check(cp2k_check):
     valid_systems = ['lumi:small']
     valid_prog_environs = ['cpeGNU']
     descr = f'CP2K CPU check'
-    reference = {
-        'lumi:small': {'time': (152.644, None, 0.05, 's')},
-    }
+    tags = {'contrib/22.08', 'contrib/22.12'}
+
     num_tasks = 256
     num_tasks_per_node = 128
 
-    tags = {'contrib/22.08', 'contrib/22.12'}
+    executable = 'cp2k.psmp'
+    executable_opts = ['H2O-256.inp']
 
 
 @rfm.simple_test
 class lumi_cp2k_gpu_check(cp2k_check):
-    #modules = ['CP2K/2024.2-cpeGNU-24.03-rocm']
+    """The CP2K GPU test on LUMI.
+
+    The way how CP2K is called is based on the [documentation](https://lumi-supercomputer.github.io/LUMI-EasyBuild-docs/c/CP2K/#example-batch-scripts)
+    """
     modules = ['CP2K']
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
-    descr = f'CP2K CPU check'
-
-    # TODO: update the timings with more usefull ones.
-    reference = {
-    }
-    num_tasks = 16
-    num_tasks_per_node = 8
-
-    # CP2K seems to have problems if a rank has more than one GPU.
-    #  Furthermore, there is also this: https://confluence.cscs.ch/spaces/KB/pages/868823032/Known+MPI+issues#KnownMPIissues-%22cxil_map%3Awriteerror%22whendoinginter-nodeGPU-awareMPIcommunication
-    extra_resources = {
-            "_rfm_gpu": {"num_gpus_per_task": 1},
-    }
-
+    descr = 'CP2K GPU check'
     tags = {'contrib/22.08', 'contrib/22.12'}
 
+    # We have to use the script here becuase we have to make sure that every
+    #  rank has exactly one GPU. It would be nice to use the `--gpus-per-task`
+    #  flag but that does not seem to work.
+    executable = './select_gpu.sh'
+    executable_opts = ['cp2k.psmp', 'H2O-256.inp']
+
+    num_cpus_per_task = 7
+    num_tasks = 16
+    num_tasks_per_node = 8
+    extra_resources = {
+        "gpus_per_node": {"num_gpus_per_node": 8},
+    }
+
+    @run_before('run')
+    def set_cpu_binding_mask(self):
+        self.job.launcher.options = ["--cpu-bind=mask_cpu:7e000000000000,7e00000000000000,7e0000,7e000000,7e,7e00,7e00000000,7e0000000000"]
+
+    prerun_cmds = ["ulimit -s unlimited"]
+    variables = {
+        "MPICH_OFI_NIC_POLICY": "GPU",
+        "MPICH_GPU_SUPPORT_ENABLED": "1",
+        "OMP_PLACES": "cores",
+        "OMP_PROC_BIND": "close",
+        "OMP_NUM_THREADS": "${SLURM_CPUS_PER_TASK}",
+        "OMP_STACKSIZE": "512M",
+    }
