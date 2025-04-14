@@ -124,7 +124,11 @@ site_configuration = {
                             'options': ['--mem={mem_per_node}']
                         },
                         {
-                            'name': '_rfm_gpu',
+                            'name': 'gpus_per_node',
+                            'options': ['--gpus-per-node={num_gpus_per_node}']
+                        },
+                        {
+                            'name': 'gpus_per_task',
                             'options': ['--gpus-per-task={num_gpus_per_task}']
                         },
                     ],
