@@ -127,6 +127,7 @@ site_configuration = {
                             'options': ['--gpus-per-node={num_gpus_per_node}']
                         },
                         {
+                            # NOTE: At least for CP2K this option does not seem to work.
                             'name': 'gpus_per_task',
                             'options': ['--gpus-per-task={num_gpus_per_task}']
                         },
