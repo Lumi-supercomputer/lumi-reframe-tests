@@ -114,7 +114,6 @@ site_configuration = {
                     'max_jobs': 10,
                     'modules': ['partition/G'],
                     'access': [
-                        #'--partition small-g',
                         '--partition standard-g',
                         f'--account={project}',
                     ],
