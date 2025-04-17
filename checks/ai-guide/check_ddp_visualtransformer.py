@@ -10,11 +10,12 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
     container_platform  = 'Singularity'
     num_tasks_per_node  = 8
     num_gpus_per_node   = 8
-    cpus_per_task       = 7
+    num_cpus_per_task   = 7
     exclusive_access    = True
     cont_image          = parameter([
         'rocm-6.2.1-python-3.12-pytorch-20240918-vllm-4075b35',
     ])
+    node_config = parameter(['1node', '2node'])
 
     @run_before('run')
     def set_launch_settings(self):
@@ -28,19 +29,6 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
         }
         self.job.launcher.options = ['--cpu-bind=v,mask_cpu="0x00fe000000000000,0xfe00000000000000,0x0000000000fe0000,0x00000000fe000000,0x00000000000000fe,0x000000000000fe00,0x000000fe00000000,0x0000fe0000000000"']
 
-
-@rfm.simple_test
-class test_visualtransformer(singularity_container_image):
-    launcher = parameter(['pytorch', 'deepspeed'])
-    node_config = parameter(['1node', '2node'])
-
-    refs = {
-        ('pytorch', '1node'): (380.0, None, 0.1, 's'),
-        ('pytorch', '2node'): (220.0, None, 0.1, 's'),
-        ('deepspeed', '1node'): (380.0, None, 0.1, 's'),
-        ('deepspeed', '2node'): (220.0, None, 0.1, 's'),
-    }
-
     @run_before('run')
     def configure_nodes(self):
         if self.node_config == '1node':
@@ -50,6 +38,18 @@ class test_visualtransformer(singularity_container_image):
 
         self.env_vars['WORLD_SIZE'] = str(self.num_tasks)
         self.env_vars['MASTER_ADDR'] = '$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)'
+
+@rfm.simple_test
+class test_visualtransformer(singularity_container_image):
+    launcher = parameter(['pytorch', 'deepspeed'])
+
+    refs = {
+        ('pytorch', '1node'): (380.0, None, 0.1, 's'),
+        ('pytorch', '2node'): (220.0, None, 0.1, 's'),
+        ('deepspeed', '1node'): (380.0, None, 0.1, 's'),
+        ('deepspeed', '2node'): (220.0, None, 0.1, 's'),
+    }
+
 
     @run_before('performance')
     def set_reference(self):
@@ -121,4 +121,4 @@ class test_container_rccl(singularity_container_image):
                 '/appl/local/containers/sif-images/',
                 f'lumi-pytorch-{self.cont_image}.sif',
                 )
-        self.container_platform.command = "bash -c '\$WITH_CONDA; /opt/rccltests/all_reduce_perf -z 1 -b 2M -e 2048M -f 2 -g 1 -t 1 -R 1 -n 80 -w 5 -d half'"
+        self.container_platform.command = "bash -c '/opt/rccltests/all_reduce_perf -z 1 -b 2M -e 2048M -f 2 -g 1 -t 1 -R 1 -n 80 -w 5 -d half'"
