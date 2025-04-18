@@ -3,7 +3,7 @@ import reframe.utility.sanity as sn
 
 
 class cp2k_check(rfm.RunOnlyRegressionTest):
-    maintainers = ['mszpindler']
+    maintainers = ['philip-paul-mueller']
 
     # TODO: Make sure that the GPU timings are meaningfull.
     reference = {
@@ -40,7 +40,7 @@ class lumi_cp2k_cpu_check(cp2k_check):
     valid_systems = ['lumi:small']
     valid_prog_environs = ['cpeGNU']
     descr = f'CP2K CPU check'
-    tags = {'contrib/22.08', 'contrib/22.12'}
+    tags = {'contrib'}
 
     num_tasks = 256
     num_tasks_per_node = 128
@@ -59,27 +59,37 @@ class lumi_cp2k_gpu_check(cp2k_check):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
     descr = 'CP2K GPU check'
-    tags = {'contrib/22.08', 'contrib/22.12'}
-
-    # We have to use the script here becuase we have to make sure that every
-    #  rank has exactly one GPU. It would be nice to use the `--gpus-per-task`
-    #  flag but that does not seem to work.
-    executable = './select_gpu.sh'
-    executable_opts = ['cp2k.psmp', 'H2O-256.inp']
+    tags = {'contrib'}
 
     num_cpus_per_task = 7
     num_tasks = 16
     num_tasks_per_node = 8
-    extra_resources = {
-        "gpus_per_node": {"num_gpus_per_node": 8},
-    }
+    num_gpus_per_node = 8
 
+    executable = 'cp2k.psmp'
+    executable_opts = ['H2O-256.inp']
+
+    # We have to use the script here becuase we have to make sure that every
+    #  rank has exactly one GPU. It would be nice to use the `--gpus-per-task`
+    #  flag but that does not seem to work.
+    @run_after('init')
+    def add_select_gpu_wrapper(self):
+        self.prerun_cmds += [
+            'cat << EOF > select_gpu',
+            '#!/bin/bash',
+            'export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID',
+            'exec \$*',
+            'EOF',
+            'chmod +x ./select_gpu'
+        ]
+        self.executable = './select_gpu ' + self.executable
+    
     @run_before('run')
     def set_cpu_binding_mask(self):
         self.job.launcher.options = ["--cpu-bind=mask_cpu:7e000000000000,7e00000000000000,7e0000,7e000000,7e,7e00,7e00000000,7e0000000000"]
 
     prerun_cmds = ["ulimit -s unlimited"]
-    variables = {
+    env_vars = {
         "MPICH_OFI_NIC_POLICY": "GPU",
         "MPICH_GPU_SUPPORT_ENABLED": "1",
         "OMP_PLACES": "cores",
