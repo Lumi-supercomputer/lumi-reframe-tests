@@ -46,6 +46,8 @@ class lumi_quantumespresso_cpu_check(quantumespresso_check):
     energy_reference = -11427.09017152
     energy_tolerance = 1.0e-6
 
+    # The time was obtained by running it multiple times and then compute
+    #  the average over these runs.
     reference = {
         'lumi:small': {'time': (56.16, None, 0.05, 's')},
     } 
