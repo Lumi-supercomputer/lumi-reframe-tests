@@ -48,9 +48,6 @@ class lumi_quantumespresso_cpu_check(quantumespresso_check):
 
         # In the CSCS test the option `num_tasks_per_core` is defined, however,
         #  on LUMI this leads to a quite significant drop in performance.
-        #  Furthermore, in CSCS tests the variable `OMP_NUM_THREADS` is exported
-        #  but on LUMI this leads to a segfault.
-
         if self.mode == 'mpi':
             self.num_tasks = 256
             self.num_tasks_per_node = 128
@@ -61,8 +58,7 @@ class lumi_quantumespresso_cpu_check(quantumespresso_check):
             self.num_tasks_per_node = 64
             self.num_cpus_per_task = 2
             self.env_vars = {
-                # If we define `OMP_NUM_THREADS` we get a segfault.
-                #'OMP_NUM_THREADS': self.num_cpus_per_task,
+                'OMP_NUM_THREADS': self.num_cpus_per_task,
             }
 
 
@@ -76,7 +72,7 @@ class lumi_quantumespresso_cpu_check(quantumespresso_check):
             },
             'mpi_omp': {
                 'lumi:small': {
-                    'time': (60.00, None, 0.05, 's')
+                    'time': (56.00, None, 0.05, 's')
                 },
             },
         }
