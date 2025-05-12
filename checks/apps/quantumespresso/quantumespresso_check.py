@@ -10,11 +10,17 @@ class quantumespresso_check(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def assert_simulation_success(self):
-        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
-                                  self.stdout, 'energy', float)
+        energy = sn.extractsingle(
+                # It seems as QE prefixes the final total energy with a `!`.
+                r'\s*!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
+                self.stdout,
+                'energy',
+                float
+        )
         energy_diff = sn.abs(energy-self.energy_reference)
         return sn.all([
             sn.assert_found(r'convergence has been achieved', self.stdout),
+            sn.assert_found(r'\s+JOB DONE', self.stdout),
             sn.assert_lt(energy_diff, self.energy_tolerance)
         ])
 
