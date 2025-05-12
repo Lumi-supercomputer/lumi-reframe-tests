@@ -10,11 +10,11 @@ class quantumespresso_check(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def assert_simulation_success(self):
-        energy = sn.extractsingle(r'total energy\s+\=\s+(?P<energy>\S+) Ry',
+        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
                                   self.stdout, 'energy', float)
         energy_diff = sn.abs(energy-self.energy_reference)
         return sn.all([
-            sn.assert_found(r'\s+JOB DONE', self.stdout),
+            sn.assert_found(r'convergence has been achieved', self.stdout),
             sn.assert_lt(energy_diff, self.energy_tolerance)
         ])
 
@@ -34,10 +34,12 @@ class lumi_quantumespresso_cpu_check(quantumespresso_check):
     num_cpus_per_task = 1
     time_limit = '15m'
 
+    # It seems that the reference value of the energy also depends on the node
+    #  configuration. The value selected below is the one used by CSCS in their
+    #  "large" configuration, which also has 256 nodes.
+    energy_reference = -11427.09017152
     energy_tolerance = 1.0e-6
-    energy_reference = -11423.49032755
+
     reference = {
         'lumi:small': {'time': (110.0, None, 0.05, 's')},
     } 
-
-    tags = {'contrib/22.08', 'contrib/22.12'}
