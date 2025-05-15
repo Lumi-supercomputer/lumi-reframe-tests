@@ -3,10 +3,13 @@ import reframe.utility.sanity as sn
 
 
 class cp2k_check(rfm.RunOnlyRegressionTest):
-    modules = ['CP2K']
-    executable = 'cp2k.psmp'
-    maintainers = ['mszpindler']
-    executable_opts = ['H2O-256.inp']
+    maintainers = ['philip-paul-mueller']
+
+    # TODO: Make sure that the GPU timings are meaningfull.
+    reference = {
+        'lumi:small': {'time': (152.644, None, 0.05, 's')},
+        'lumi:gpu': {'time': (165.425, None, 0.05, 's')},
+    }
 
     @sanity_function
     def assert_energy_diff(self):
@@ -33,13 +36,64 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class lumi_cp2k_cpu_check(cp2k_check):
+    modules = ['CP2K']
     valid_systems = ['lumi:small']
     valid_prog_environs = ['cpeGNU']
     descr = f'CP2K CPU check'
-    reference = {
-        'lumi:small': {'time': (152.644, None, 0.05, 's')},
-    }
+    tags = {'contrib'}
+
     num_tasks = 256
     num_tasks_per_node = 128
 
-    tags = {'contrib/22.08', 'contrib/22.12'}
+    executable = 'cp2k.psmp'
+    executable_opts = ['H2O-256.inp']
+
+
+@rfm.simple_test
+class lumi_cp2k_gpu_check(cp2k_check):
+    """The CP2K GPU test on LUMI.
+
+    The way how CP2K is called is based on the [documentation](https://lumi-supercomputer.github.io/LUMI-EasyBuild-docs/c/CP2K/#example-batch-scripts)
+    """
+    modules = ['CP2K']
+    valid_systems = ['lumi:gpu']
+    valid_prog_environs = ['cpeAMD']
+    descr = 'CP2K GPU check'
+    tags = {'contrib'}
+
+    num_cpus_per_task = 7
+    num_tasks = 16
+    num_tasks_per_node = 8
+    num_gpus_per_node = 8
+
+    executable = 'cp2k.psmp'
+    executable_opts = ['H2O-256.inp']
+
+    # We have to use the script here becuase we have to make sure that every
+    #  rank has exactly one GPU. It would be nice to use the `--gpus-per-task`
+    #  flag but that does not seem to work.
+    @run_after('init')
+    def add_select_gpu_wrapper(self):
+        self.prerun_cmds += [
+            'cat << EOF > select_gpu',
+            '#!/bin/bash',
+            'export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID',
+            'exec \$*',
+            'EOF',
+            'chmod +x ./select_gpu'
+        ]
+        self.executable = './select_gpu ' + self.executable
+    
+    @run_before('run')
+    def set_cpu_binding_mask(self):
+        self.job.launcher.options = ["--cpu-bind=mask_cpu:7e000000000000,7e00000000000000,7e0000,7e000000,7e,7e00,7e00000000,7e0000000000"]
+
+    prerun_cmds = ["ulimit -s unlimited"]
+    env_vars = {
+        "MPICH_OFI_NIC_POLICY": "GPU",
+        "MPICH_GPU_SUPPORT_ENABLED": "1",
+        "OMP_PLACES": "cores",
+        "OMP_PROC_BIND": "close",
+        "OMP_NUM_THREADS": "${SLURM_CPUS_PER_TASK}",
+        "OMP_STACKSIZE": "512M",
+    }

@@ -120,6 +120,8 @@ site_configuration = {
                             'name': 'memory',
                             'options': ['--mem={mem_per_node}']
                         },
+                        # NOTE: Without this configuration ReFrame would ignore the
+                        #  `num_gpus_per_node` variable of a test.
                         {
                             'name': '_rfm_gpu',
                             'options': ['--gpus-per-node={num_gpus_per_node}']
