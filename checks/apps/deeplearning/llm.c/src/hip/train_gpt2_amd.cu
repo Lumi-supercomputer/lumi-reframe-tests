@@ -1625,7 +1625,7 @@ int main(int argc, char *argv[]) {
 
     // build an EvalLoader for HellaSwag
     EvalLoader eval_loader;
-    const char* hellaswag_path = "dev/data/hellaswag/hellaswag_val.bin";
+    const char* hellaswag_path = "hellaswag_val.bin";
     const bool hellaswag_available = access(hellaswag_path, F_OK) == 0;
     const bool run_hellaswag = hellaswag_eval && hellaswag_available;
     if (run_hellaswag) {
@@ -1736,7 +1736,7 @@ int main(int argc, char *argv[]) {
             float eval_acc_norm = 0.0f;
             evalloader_reset(&eval_loader);
             for (int i = 0; i < eval_loader.num_batches; i++) {
-                if (i % 10 == 0) { printf("evaluating HellaSwag: %d/%d\r", i, eval_loader.num_batches); }
+                if (i % 10 == 0) { printf("evaluating HellaSwag: %d/%d\n", i, eval_loader.num_batches); }
                 evalloader_next_batch(&eval_loader);
                 gpt2_validate(&model, eval_loader.inputs, eval_loader.targets, B, T);
                 int correct = evalloader_stat_losses(&eval_loader, model.cpu_losses);
@@ -1783,6 +1783,7 @@ int main(int argc, char *argv[]) {
                 int next_token = sample_softmax(cpu_logits, model.config.vocab_size, coin);
                 gen_tokens[t] = next_token;
                 // print the generated token, either using the Tokenizer or a fallback
+                /* mszpindler
                 if (tokenizer.init_ok) {
                     const char* token_str = tokenizer_decode(&tokenizer, next_token);
                     safe_printf(token_str);
@@ -1790,6 +1791,9 @@ int main(int argc, char *argv[]) {
                     // fall back to printing the token id
                     printf("%d ", next_token);
                 }
+                // print token id only to avoid strange characters in the output
+                */
+                printf("%d ", next_token);
                 fflush(stdout);
             }
             printf("\n---\n");
