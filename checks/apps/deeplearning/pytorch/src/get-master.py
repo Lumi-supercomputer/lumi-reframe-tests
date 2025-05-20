@@ -1,1 +1,0 @@
-../../../../containers/ML_containers/src/pytorch/get-master.py
