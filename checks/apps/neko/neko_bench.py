@@ -23,7 +23,7 @@ class MakeNeko(rfm.core.buildsystems.BuildSystem):
 
 class lumi_make_neko(MakeNeko, rfm.CompileOnlyRegressionTest):
     case = variable(str)
-    modules = ['Neko/0.8.1-cpeCray-24.03-rocm']
+    modules = ['Neko']
 
     @run_after('setup')
     def set_build(self):
@@ -40,7 +40,8 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     exclusive_access = True
     time_limit = '15m'
 
-    modules = ['Neko/0.8.1-cpeCray-24.03-rocm']
+    # latest check with version 0.9.1-cpeCray-24.03-rocm
+    modules = ['Neko']
     case = 'tgv'
 
     makeneko = fixture(lumi_make_neko, scope='environment', variables={'case': case})
@@ -118,7 +119,7 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
 
     @run_before('performance')
     def set_time_perf(self):
-        timesteps = sn.extractall(r'Elapsed time \(s\):\s+(\S+)', self.stdout, 1, float)
+        timesteps = sn.extractall(r'Total elapsed time \(s\):\s\s\s+(\S+)', self.stdout, 1, float)
 
         pf = sn.make_performance_function(lambda: timesteps[-1], 's')
         self.perf_variables['total_runtime'] = pf
