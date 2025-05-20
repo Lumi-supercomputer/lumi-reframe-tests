@@ -20,6 +20,8 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def set_launch_settings(self):
         self.env_vars = {
+            'TORCH_HOME':'/scratch/project_462000008/.cache',
+            'HF_HOME':'/scratch/project_462000008/.cache',
             'NCCL_NET_GDR_LEVEL':'PHB',
             'NCCL_SOCKET_IFNAME':'hsn0,hsn1,hsn2,hsn3',
             'SINGULARITY_BIND'  :'/appl/local/training/LUMI-AI-Guide/visualtransformer-env.sqsh:/user-software:image-src=/,/var/spool/slurmd,/opt/cray,/usr/lib64/libcxi.so.1,/usr/lib64/libjansson.so.4,/pfs,/scratch,/projappl,/project,/flash,/appl,/appl/local/training/LUMI-AI-Guide/deepspeed_adam:/user-software/lib/python3.12/site-packages/deepspeed/ops/csrc/adam,/appl/local/training/LUMI-AI-Guide/deepspeed_includes:/user-software/lib/python3.12/site-packages/deepspeed/ops/csrc/includes',
@@ -90,12 +92,22 @@ class test_visualtransformer(singularity_container_image):
 
 @rfm.simple_test
 class test_container_rccl(singularity_container_image):
-    reference = {
-        'lumi:gpu': {
+    refs = {
+        '1node': {
             'busbw': (125, -0.05, None, 'GB/s'),
             'algbw': (70, -0.05, None, 'GB/s'),
-        }
+        },
+        '2node': {
+            'busbw': (85, -0.05, None, 'GB/s'),
+            'algbw': (45, -0.05, None, 'GB/s'),
+        },
     }
+
+    @run_before('performance')
+    def set_reference(self):
+        self.reference = {
+            'lumi:gpu': self.refs[self.node_config]
+        }
 
     @sanity_function
     def check_last_line(self):
