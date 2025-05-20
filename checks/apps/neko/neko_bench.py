@@ -139,6 +139,7 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class lumi_neko_bench(NekoTGVBase):
     first_workrate_timestep = 1200
+    tags = {'benchmark', 'contrib', 'gpu'}
 
     allref = {
         32768: {
