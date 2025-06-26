@@ -46,7 +46,7 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
                 self.modules = ['GROMACS/2024.3-cpeAMD-24.03-rocm', 'rocm/6.0.3', 'AdaptiveCpp/24.06']
                 self.tags = {'benchmark', 'production', 'contrib', 'gpu'}
             case 'leading':
-                self.modules = ['GROMACS/2024.4-cpeAMD-24.03-rocm', 'rocm/6.2.2', 'AdaptiveCpp/24.06']
+                self.modules = ['GROMACS/2025.1-cpeAMD-24.03-HeFFTe-rocm', 'rocm/6.2.2', 'AdaptiveCpp/24.06']
                 self.tags = {'benchmark', 'testing', 'contrib', 'gpu'}
 
     @run_after('init')
@@ -60,11 +60,6 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
         self.prerun_cmds = [
             f'ln -s {bench_file_path} benchmark.tpr'
         ]
-
-    @run_after('init')
-    def apply_module_ver(self):
-        #module = f'GROMACS/{self.module_ver}'
-        self.modules = ['GROMACS/2024.3-cpeAMD-24.03-rocm', 'rocm/6.0.3']
 
     @run_after('init')
     def setup_runtime(self):
