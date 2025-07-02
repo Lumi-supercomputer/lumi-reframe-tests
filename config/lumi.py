@@ -129,6 +129,43 @@ site_configuration = {
                     ],
                     'launcher': 'srun'
                 },
+                {
+                    'name': 'dev-g',
+                    'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250X 8/cn)',
+                    'scheduler': 'slurm',
+                    'time_limit': '10m',
+                    'container_platforms': [
+                        {
+                            'type': 'Singularity',
+                            'modules': []
+                        }
+                    ],
+                    'environs': [
+                        'builtin',
+                        'PrgEnv-amd',
+                        'PrgEnv-cray',
+                        'PrgEnv-gnu',
+                        'cpeAMD',
+                        'cpeCray',
+                        'cpeGNU',
+                        'ROCm',
+                    ],
+                    'max_jobs': 2,
+                    'modules': ['partition/G'],
+                    'access': ['--partition dev-g',
+                               f'--account={project}'],
+                    'resources': [
+                        {
+                            'name': 'memory',
+                            'options': ['--mem={mem_per_node}']
+                        },
+                        {
+                            'name': '_rfm_gpu',
+                            'options': ['--gpus-per-node={num_gpus_per_node}']
+                        },
+                    ],
+                    'launcher': 'srun'
+                },
             ]
         },
     ],
@@ -140,7 +177,7 @@ site_configuration = {
         },
         {
             'name': 'PrgEnv-amd',
-            'target_systems': ['lumi:gpu'],
+            'target_systems': ['lumi:gpu', 'lumi:dev-g'],
             'modules': ['PrgEnv-amd']
         },
         {
@@ -155,7 +192,7 @@ site_configuration = {
         },
         {
             'name': 'cpeAMD',
-            'target_systems': ['lumi:gpu'],
+            'target_systems': ['lumi:gpu', 'lumi:dev-g'],
             'modules': ['cpeAMD']
         },
         {
@@ -182,7 +219,7 @@ site_configuration = {
             #'ldflags': 
             'cppflags': ['-D__HIP_PLATFORM_AMD__'],
             'modules': ['rocm'],
-            'target_systems': ['lumi:gpu']
+            'target_systems': ['lumi:gpu', 'lumi:dev-g']
         }
     ],
     'logging': [
