@@ -43,6 +43,7 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     # latest check with version 0.9.1-cpeCray-24.03-rocm
     modules = ['Neko']
     case = 'tgv'
+    container_platform = 'Singularity'
 
     makeneko = fixture(lumi_make_neko, scope='environment', variables={'case': case})
 
@@ -112,6 +113,21 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     def set_cpu_binding(self):
         cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
         self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
+
+    
+    @run_before('run')
+    def ccpe_image(self):
+        self.container_platform.image = '$SIFCCPE'
+        self.executable = os.path.join(self.makeneko.stagedir,
+                                       'neko')
+        case_file = os.path.join(self.stagedir, 
+                                 str(self.size),
+                                 f'{self.case}.case')
+        self.container_platform.command = './select_gpu ' + self.executable + ' ' + case_file
+
+    @run_before('run')
+    def ccpe_adapt_srun(self):
+        self.job.launcher.modifier = 'SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH'
 
     @sanity_function
     def normal_end(self):

@@ -112,9 +112,14 @@ site_configuration = {
                         'ROCm',
                     ],
                     'max_jobs': 10,
-                    'modules': ['partition/G'],
-                    'access': ['--partition small-g',
+                    'modules': ['LUMI', 'partition/G'],
+                    'access': ['--partition dev-g',
                                f'--account={project}'],
+                    'prepare_cmds': ['if [ -z "${SWITCHTOCCPE}" ]', 
+                               'then', 
+                               '   module load CrayEnv ccpe/25.03-B-rocm-6.3-SP5-LUMI || exit', 
+                               'fi',
+                               'eval $SWITCHTOCCPE'],
                     'resources': [
                         {
                             'name': 'memory',
