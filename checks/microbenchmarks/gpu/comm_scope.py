@@ -14,7 +14,9 @@ class comm_scope(rfm.RegressionTest):
     executable_opts = ['--benchmark_filter="Comm_implicit_managed_GPUWrGPU_fine/0/([1-7])/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
     maintainers = ['mszpindler']
     num_gpus_per_node = 8
-    num_cpus_per_task = 8
+    num_cpus_per_task = 7
+
+    container_platform = 'Singularity'
 
     # Reference numbers are taken from C. Pearson "Interconnect Bandwidth Heterogeneity on AMD MI250x and Infinity Fabric" (https://arxiv.org/pdf/2302.14827.pdf)
     reference = {
@@ -37,10 +39,19 @@ class comm_scope(rfm.RegressionTest):
             'LD_LIBRARY_PATH': '$LD_LIBRARY_PATH:/opt/rocm/llvm/lib/',
         }
 
+    @run_before('run')
+    def ccpe_image(self):
+        self.container_platform.image = '$SIFCCPE'
+        self.container_platform.command = self.executable + ' ' + ' '.join(self.executable_opts)
+
+    @run_before('run')
+    def ccpe_adapt_srun(self):
+        self.job.launcher.modifier = 'SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH'
+
     @run_before('compile')
     def do_cmake(self):
         self.prebuild_cmds = ['git submodule update --init --recursive']
-        self.build_system.config_opts = ['--fresh', '-DCMAKE_CXX_COMPILER=hipcc', '-DSCOPE_ARCH_MI250X=ON', '-DSCOPE_USE_NUMA=ON', '-DCMAKE_CXX_FLAGS="-D__HIP_PLATFORM_AMD__"']
+        self.build_system.config_opts = ['--fresh', '-DCMAKE_CXX_COMPILER=hipcc', '-DSCOPE_ARCH_MI250X=ON', '-DSCOPE_USE_NUMA=OFF', '-DCMAKE_CXX_FLAGS="-D__HIP_PLATFORM_AMD__"']
         self.build_system.flags_from_environ = False
         self.build_system.builddir = 'build'
         self.build_system.max_concurrency = 8
