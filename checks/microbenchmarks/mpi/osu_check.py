@@ -9,7 +9,7 @@ from hpctestlib.microbenchmarks.mpi.osu import (build_osu_benchmarks,
 class lumi_fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
    # This test implies version 6.0 or later due to code structure change
    # introduced in the version 6.0 of OSU microbenchmarks
-   version = '7.3'
+   version = '7.4'
    local = True
 
    @run_before('run')
@@ -23,7 +23,7 @@ class lumi_fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
    
 class lumi_build_osu_benchmarks(build_osu_benchmarks):
     build_type = parameter(['cpu', 'rocm'])
-    osu_benchmarks = fixture(lumi_fetch_osu_benchmarks, scope='session', variables={'version': '7.3'})
+    osu_benchmarks = fixture(lumi_fetch_osu_benchmarks, scope='session', variables={'version': '7.4'})
 
     @run_after('init')
     def setup_modules(self):
@@ -49,7 +49,7 @@ class lumi_osu_benchmarks(osu_build_run):
         if build_type == 'rocm':
             self.device_buffers = 'rocm'
             self.valid_systems = ['lumi:gpu']
-            self.valid_prog_environs = ['PrgEnv-amd']
+            self.valid_prog_environs = ['PrgEnv-amd', 'PrgEnv-cray']
             self.env_vars = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
         else:
             self.valid_systems = ['lumi:standard']
@@ -74,6 +74,9 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
         ('mpi.pt2pt.standard.osu_multi_lat', 'latency')
     ], fmt=lambda x: x[0], loggable=True)
     osu_binaries = fixture(lumi_build_osu_benchmarks, scope='environment')
+
+    container_platform = 'Singularity'
+
     allref = {
         'mpi.pt2pt.standard.osu_mbw_mr' : {
             'cpu': {
@@ -83,7 +86,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
             },
 	    'rocm': {
                 'lumi:gpu': {
-                    'bandwidth': (95000.0, -0.01, 0.01, 'MB/s')
+                    'bandwidth': (96000.0, -0.01, 0.01, 'MB/s')
                 }
             }
         },
@@ -125,6 +128,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
         }
     }
 
+
     @run_after('init')
     def setup_refs(self):
         build_type = self.osu_binaries.build_type
@@ -134,6 +138,11 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
         with contextlib.suppress(KeyError):
             self.reference = self.allref[self.benchmark_info[0]][build_type]
 
+    @run_after('init')
+    def setup_modules(self):
+        build_type = self.osu_binaries.build_type
+        if build_type == 'rocm':
+            self.modules = ['rocm']
 
     @run_before('run')
     def setup_num_tasks(self):
@@ -151,6 +160,17 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
             if self.num_gpus_per_node > 1:
                 self.executable = './map_rank_to_gpu ' + self.executable
 
+    @run_before('run')
+    def ccpe_image(self):
+        self.container_platform.image = '$SIFCCPE'
+        if self.num_gpus_per_node > 1:
+            self.executable = './map_rank_to_gpu ' + self.executable
+        self.container_platform.command = self.executable + ' ' + ' '.join(self.executable_opts)
+
+    @run_before('run')
+    def ccpe_adapt_srun(self):
+        self.job.launcher.modifier = 'SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH'
+
     @sanity_function
     def validate_test(self):
         # with validation
@@ -166,6 +186,9 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
     ], fmt=lambda x: x[0], loggable=True)
     num_nodes = parameter([1, 2, 4])
     osu_binaries = fixture(lumi_build_osu_benchmarks, scope='environment')
+
+    container_platform = 'Singularity'
+
     allref = {
         'mpi.collective.blocking.osu_allreduce': {
             1: {
@@ -218,6 +241,21 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
         else:
             self.num_tasks_per_node = 128
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
+
+    @run_after('init')
+    def setup_modules(self):
+        build_type = self.osu_binaries.build_type
+        if build_type == 'rocm':
+            self.modules = ['rocm']
+
+    @run_before('run')
+    def ccpe_image(self):
+        self.container_platform.image = '$SIFCCPE'
+        self.container_platform.command = self.executable + ' ' + ' '.join(self.executable_opts)
+
+    @run_before('run')
+    def ccpe_adapt_srun(self):
+        self.job.launcher.modifier = 'SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH'
 
     @run_after('init')
     def setup_refs(self):
