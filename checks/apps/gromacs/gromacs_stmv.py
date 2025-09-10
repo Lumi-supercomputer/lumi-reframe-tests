@@ -37,6 +37,8 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     tags = {'benchmark', 'contrib', 'gpu'}
     keep_files = ['md.log']
 
+    container_platform = 'Singularity'
+
     allref = {
         1: {
             'gpu': (100.0, -0.05, None, 'ns/day'), # update=gpu, gpu resident mode
@@ -55,7 +57,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
                 self.modules = ['GROMACS/2024.3-cpeAMD-24.03-rocm', 'rocm/6.0.3', 'AdaptiveCpp/24.06']
                 self.tags = {'benchmark', 'production', 'contrib', 'gpu'}
             case 'leading':
-                self.modules = ['GROMACS/2024.4-cpeAMD-24.03-rocm', 'rocm/6.2.2', 'AdaptiveCpp/24.06']
+                self.modules = ['GROMACS']
                 self.tags = {'benchmark', 'testing', 'contrib', 'gpu'}
 
     @run_after('init')
@@ -101,6 +103,11 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
             'GMX_PMEONEDD': '1',
         }
 
+
+    @run_before('run')
+    def ccpe_adapt_srun(self):
+        self.job.launcher.modifier = 'SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH'
+
     @run_before('run')
     def set_cpu_mask(self):
         cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
@@ -117,6 +124,11 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
             'chmod +x ./select_gpu'
         ]
         self.executable = './select_gpu ' + self.executable
+
+    @run_before('run')
+    def ccpe_image(self):
+        self.container_platform.image = '$SIFCCPE'
+        self.container_platform.command = './select_gpu ' + self.executable + ' ' + ' '.join(self.executable_opts)
 
     @performance_function('ns/day')
     def perf(self):
