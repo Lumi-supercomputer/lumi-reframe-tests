@@ -41,7 +41,9 @@ class lumi_osu_benchmarks(osu_build_run):
     exclusive_access = True
     time_limit = '10m'
     tags = {'production', 'craype'}
-    maintainers = ['@rsarm', '@mszpindler']
+    maintainers = ['@mszpindler']
+
+    perf_relative = variable(float, value=0.0, loggable=True)
 
     @run_after('init')
     def setup_per_build_type(self):
@@ -63,6 +65,22 @@ class lumi_osu_benchmarks(osu_build_run):
                                        self.osu_binaries.build_prefix,
                                        'c', 
                                        bench_path)
+
+    @run_after('performance')
+    def set_relative_perf(self):
+        var_name = self.benchmark_info[1]
+        key_str = self.current_partition.fullname+':'+var_name
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if var_name == 'latency':
+            if self.perfvalues[key_str][1] != 0:
+                self.perf_relative = ((self.perfvalues[key_str][1]-self.perfvalues[key_str][0])/self.perfvalues[key_str][1])
+        if var_name == 'bandwidth':
+            if self.perfvalues[key_str][1] != 0:
+                self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
 
 @rfm.simple_test
 class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
@@ -224,3 +242,4 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
         build_type = self.osu_binaries.build_type
         with contextlib.suppress(KeyError):
             self.reference = self.allref[self.benchmark_info[0]][self.num_nodes][build_type]
+

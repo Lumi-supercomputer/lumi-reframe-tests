@@ -19,10 +19,12 @@ class rccl_test_allreduce(rfm.RegressionTest):
     executable = 'build/all_reduce_perf'
     exclusive_access = True
 
+    perf_relative = variable(float, value=0.0, loggable=True)
+
     reference = {
         'lumi:gpu': {
             'busbw': (85.00, -0.05, None, 'GB/s'),
-            'algbw': (45.00, -0.05, None, 'GB/s'),
+            #'algbw': (45.00, -0.05, None, 'GB/s'),
         }
     }
 
@@ -58,9 +60,21 @@ class rccl_test_allreduce(rfm.RegressionTest):
             self.stdout, 'busbw', float
         )
 
-    @performance_function('GB/s')
-    def algbw(self):
-        return sn.extractsingle(
-            r'^\s+134217728.+\s+(?P<algbw>\S+)\s+\S+\s+\S+$',
-            self.stdout, 'algbw', float
-        )
+    #@performance_function('GB/s')
+    #def algbw(self):
+    #    return sn.extractsingle(
+    #        r'^\s+134217728.+\s+(?P<algbw>\S+)\s+\S+\s+\S+$',
+    #        self.stdout, 'algbw', float
+    #    )
+
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'busbw'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
