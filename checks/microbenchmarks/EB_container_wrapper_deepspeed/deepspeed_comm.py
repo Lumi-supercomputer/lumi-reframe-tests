@@ -14,10 +14,13 @@ class deepspeed_comm(rfm.RunOnlyRegressionTest):
     num_tasks_per_node = 8
     num_gpus_per_node = 8
 
+    perf_relative = variable(float, value=0.0, loggable=True)
+
     reference = {
         'lumi:gpu': {
             'throughput': (815, -0.1, None, 'Gbps'),
-            'duration': (10.5, -0.1, None, 'ms')
+            # We are interested in a single variable per test
+            #'duration': (10.5, -0.1, None, 'ms')
         }
     }
 
@@ -33,12 +36,12 @@ class deepspeed_comm(rfm.RunOnlyRegressionTest):
             sn.assert_found(r'Performance of', self.stdout)  
         ])
 
-    @performance_function('ms')
-    def duration(self):
-        return sn.extractsingle(
-            r'512\.0 MB\s+\S+\s+(?P<duration>\S+)\s+ms',
-            self.stdout, 'duration', float
-        )
+    #@performance_function('ms')
+    #def duration(self):
+    #    return sn.extractsingle(
+    #        r'512\.0 MB\s+\S+\s+(?P<duration>\S+)\s+ms',
+    #        self.stdout, 'duration', float
+    #    )
 
     @performance_function('Gbps')
     def throughput(self):
@@ -47,9 +50,21 @@ class deepspeed_comm(rfm.RunOnlyRegressionTest):
             self.stdout, 'throughput', float
         )
 
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'throughput'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
+
 @rfm.simple_test
 class ds_comm_all_reduce(deepspeed_comm):
-    modules = ['PyTorch']
+    modules = ['PyTorch/2.6.0-rocm-6.2.4-python-3.12-singularity-20250410']
     dist_mode = parameter(['deepspeed', 'torch'])
 
     tags = {'python', 'contrib'}
