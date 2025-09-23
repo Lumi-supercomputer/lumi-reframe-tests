@@ -17,6 +17,8 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
     ])
     node_config = parameter(['1node', '2node'])
 
+    perf_relative = variable(float, value=0.0, loggable=True)
+
     @run_before('run')
     def set_launch_settings(self):
         self.env_vars = {
@@ -72,6 +74,18 @@ class test_visualtransformer(singularity_container_image):
             self.stdout, 1, float
         )
 
+    @run_after('performance')
+    def lower_the_better(self):
+        perf_var = 'training_time'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][1]-self.perfvalues[key_str][0])/self.perfvalues[key_str][1])
+
     @run_before('run')
     def run_training(self):
         self.container_platform.image = os.path.join(
@@ -120,12 +134,24 @@ class test_container_rccl(singularity_container_image):
             self.stdout, 'busbw', float
         )
 
-    @performance_function('GB/s')
-    def algbw(self):
-        return sn.extractsingle(
-            r'^\s+134217728.+\s+(?P<algbw>\S+)\s+\S+\s+\S+$',
-            self.stdout, 'algbw', float
-        )
+    #@performance_function('GB/s')
+    #def algbw(self):
+    #    return sn.extractsingle(
+    #        r'^\s+134217728.+\s+(?P<algbw>\S+)\s+\S+\s+\S+$',
+    #        self.stdout, 'algbw', float
+    #    )
+
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'busbw'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
 
     @run_before('run')
     def set_container_variables(self):
