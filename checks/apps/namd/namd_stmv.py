@@ -24,7 +24,7 @@ class lumi_namd_stmv(rfm.RunOnlyRegressionTest):
     time_limit = '10m'
 
     executable = 'namd3'
-    tags = {'benchmark', 'contrib', 'gpu'}
+    tags = {'benchmark', 'contrib', 'gpu', 'performance'}
 
     perf_relative = variable(float, value=0.0, loggable=True)
     allref = {

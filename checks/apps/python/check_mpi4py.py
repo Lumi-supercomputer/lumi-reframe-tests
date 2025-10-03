@@ -14,7 +14,7 @@ class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
 
     perf_relative = variable(float, value=0.0, loggable=True)
 
-    tags = {'production', 'python', 'craype', 'contrib/22.08', 'contrib/22.12'}
+    tags = {'production', 'python', 'craype', 'contrib', 'performance'}
 
     @run_after('init')
     def setup_test(self):

@@ -9,6 +9,8 @@ class quantumespresso_check(rfm.RunOnlyRegressionTest):
     executable_opts += ['-in', 'ausurf.in', '-pd', '.true.']
     maintainers = ['mszpindler']
 
+    tags = {'contrib', 'performance'}
+
     perf_relative = variable(float, value=0.0, loggable=True)
 
     @sanity_function

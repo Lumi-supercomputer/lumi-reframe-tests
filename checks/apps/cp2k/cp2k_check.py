@@ -53,7 +53,7 @@ class lumi_cp2k_cpu_check(cp2k_check):
     valid_systems = ['lumi:small']
     valid_prog_environs = ['cpeGNU']
     descr = f'CP2K CPU check'
-    tags = {'contrib'}
+    tags = {'contrib', 'performance'}
 
     num_tasks = 256
     num_tasks_per_node = 128
@@ -72,7 +72,7 @@ class lumi_cp2k_gpu_check(cp2k_check):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeGNU']
     descr = 'CP2K GPU check'
-    tags = {'contrib'}
+    tags = {'contrib', 'performance'}
 
     num_cpus_per_task = 7
     num_tasks = 16
