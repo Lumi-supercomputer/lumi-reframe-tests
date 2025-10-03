@@ -56,18 +56,14 @@ class amber_nve20_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     # :values: ``['mpi', 'cuda']``
     variant = parameter(['mpi', 'cuda', 'rocm'], loggable=True)
 
-    # Test tags
-    #
-    # :required: No
-    # :default: ``{'sciapp', 'chemistry'}``
-    tags = {'sciapp', 'chemistry'}
-
     #: See :attr:`~reframe.core.pipeline.RegressionTest.num_tasks`.
     #:
     #: The ``mpi`` variant of the test requires ``num_tasks > 1``.
     #:
     #: :required: Yes
     num_tasks = required
+
+    perf_relative = variable(float, value=0.0, loggable=True)
 
     @loggable
     @property
@@ -136,6 +132,18 @@ class amber_nve20_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
         return sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
                                 self.output_file, 'perf', float, item=1)
 
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'perf'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
+
     @sanity_function
     def assert_energy_readout(self):
         '''Assert that the obtained energy meets the required tolerance.'''
@@ -150,12 +158,11 @@ class amber_nve20_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
             sn.assert_lt(energy_diff, ref_ener_diff)
         ])
 
-
 @rfm.simple_test
 class lumi_amber_check(amber_nve20_check):
     modules = ['Amber']
     valid_prog_environs = ['PrgEnv-gnu']
-    tags |= {'maintenance', 'production'}
+    tags = {'production', 'contrib', 'performance'}
     maintainers = ['mszpindler']
     num_nodes = parameter([1, 2], loggable=True)
     allref = {
@@ -174,15 +181,13 @@ class lumi_amber_check(amber_nve20_check):
         },
     }
 
-    tags = {'contrib/22.08'}
-
     @run_after('init')
     def scope_systems(self):
         valid_systems = {
             'rocm': {1: ['lumi:gpu']},
-            'mpi': {
-                2: ['lumi:small'],
-            }
+            #'mpi': {
+            #    2: ['lumi:small'],
+            #}
         }
         try:
             self.valid_systems = valid_systems[self.variant][self.num_nodes]
