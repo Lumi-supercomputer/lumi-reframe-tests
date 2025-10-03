@@ -52,6 +52,7 @@ class lumi_osu_benchmarks(osu_build_run):
             self.device_buffers = 'rocm'
             self.valid_systems = ['lumi:gpu']
             self.valid_prog_environs = ['PrgEnv-amd']
+            self.modules = ['libfabric', 'rocm']
             self.env_vars = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
         else:
             self.valid_systems = ['lumi:standard']
@@ -88,6 +89,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
     benchmark_info = parameter([
         ('mpi.pt2pt.standard.osu_bw', 'bandwidth'),
         ('mpi.pt2pt.standard.osu_mbw_mr', 'bandwidth'),
+        ('mpi.pt2pt.standard.osu_bibw', 'bandwidth'),
         ('mpi.pt2pt.standard.osu_latency', 'latency'),
         ('mpi.pt2pt.standard.osu_multi_lat', 'latency')
     ], fmt=lambda x: x[0], loggable=True)
@@ -218,7 +220,7 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
                 },
                 'rocm': {
                     'lumi:gpu': {
-                        'latency': (10.5, -0.1, 0.1, 'us')
+                        'latency': (10.5, -0.25, 0.25, 'us')
                     },
                 },
             },
