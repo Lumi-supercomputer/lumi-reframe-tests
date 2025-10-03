@@ -10,8 +10,8 @@ class rccl_test_allreduce(rfm.RegressionTest):
     build_system = 'CMake'
     repo_name = 'rccl-tests'
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['cpeGNU']
-    modules =['rocm', 'buildtools', 'aws-ofi-rccl']
+    valid_prog_environs = ['PrgEnv-amd']
+    modules =['rocm/6.2.2', 'aws-ofi-rccl/cxi-rocm-6.2.2']
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
@@ -32,7 +32,8 @@ class rccl_test_allreduce(rfm.RegressionTest):
     def set_compiler_flags(self):
         self.sourcesdir = f'https://github.com/ROCmSoftwarePlatform/{self.repo_name}'
         self.build_system.builddir = 'build'
-        self.build_system.config_opts = ['--fresh', '-DMPI_MPICXX=CC', '-DCMAKE_CXX_COMPILER=hipcc', '-DCMAKE_CXX_FLAGS="--offload-arch=gfx90a"','-DGPU_TARGETS=gfx90a', '-DMPI_PATH=$CRAY_MPICH_DIR', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa"']
+        #self.build_system.config_opts = ['--fresh', '-DMPI_MPICXX=CC', '-DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc', '-DCMAKE_CXX_FLAGS="--offload-arch=gfx90a"','-DGPU_TARGETS=gfx90a', '-DMPI_PATH=$CRAY_MPICH_DIR', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa"']
+        self.build_system.config_opts = ['-DCMAKE_CXX_COMPILER=$(which amdclang++)', '-DUSE_MPI=ON', '-DAMDGPU_TARGETS="gfx90a"', '-DGPU_TARGETS="gfx90a"', '-DROCM_PATH=${ROCM_PATH}', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa -ldl"']
         self.build_system.make_opts = ['VERBOSE=1', '-j8']
 
     @run_after('init')
