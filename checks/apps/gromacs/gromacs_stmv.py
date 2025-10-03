@@ -37,6 +37,8 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     tags = {'benchmark', 'contrib', 'gpu'}
     keep_files = ['md.log']
 
+    perf_relative = variable(float, value=0.0, loggable=True)
+
     allref = {
         1: {
             'gpu': (100.0, -0.05, None, 'ns/day'), # update=gpu, gpu resident mode
@@ -53,7 +55,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         match self.release_environ:
             case 'production':
                 self.modules = ['GROMACS/2024.3-cpeAMD-24.03-rocm', 'rocm/6.0.3', 'AdaptiveCpp/24.06']
-                self.tags = {'benchmark', 'production', 'contrib', 'gpu'}
+                self.tags = {'benchmark', 'production', 'contrib', 'gpu', 'performance'}
             case 'leading':
                 self.modules = ['GROMACS/2024.4-cpeAMD-24.03-rocm', 'rocm/6.2.2', 'AdaptiveCpp/24.06']
                 self.tags = {'benchmark', 'testing', 'contrib', 'gpu'}
@@ -154,7 +156,19 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
            ),
         ])
 
-    @run_before('run')
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'perf'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
+
+    @run_after('init')
     def setup_run(self):
         try:
             found = self.allref[self.num_nodes][self.update_mode]

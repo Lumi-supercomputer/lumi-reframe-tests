@@ -5,10 +5,12 @@ import reframe.utility.sanity as sn
 class cp2k_check(rfm.RunOnlyRegressionTest):
     maintainers = ['philip-paul-mueller']
 
+    perf_relative = variable(float, value=0.0, loggable=True)
+
     # TODO: Make sure that the GPU timings are meaningfull.
     reference = {
         'lumi:small': {'time': (152.644, None, 0.05, 's')},
-        'lumi:gpu': {'time': (165.425, None, 0.05, 's')},
+        'lumi:gpu': {'time': (165.0, None, 0.05, 's')},
     }
 
     @sanity_function
@@ -33,6 +35,17 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
         return sn.extractsingle(r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
                                 self.stdout, 'perf', float)
 
+    @run_after('performance')
+    def lower_the_better(self):
+        perf_var = 'time'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][1]-self.perfvalues[key_str][0])/self.perfvalues[key_str][1])
 
 @rfm.simple_test
 class lumi_cp2k_cpu_check(cp2k_check):
@@ -40,7 +53,7 @@ class lumi_cp2k_cpu_check(cp2k_check):
     valid_systems = ['lumi:small']
     valid_prog_environs = ['cpeGNU']
     descr = f'CP2K CPU check'
-    tags = {'contrib'}
+    tags = {'contrib', 'performance'}
 
     num_tasks = 256
     num_tasks_per_node = 128
@@ -55,11 +68,11 @@ class lumi_cp2k_gpu_check(cp2k_check):
 
     The way how CP2K is called is based on the [documentation](https://lumi-supercomputer.github.io/LUMI-EasyBuild-docs/c/CP2K/#example-batch-scripts)
     """
-    modules = ['CP2K']
+    modules = ['CP2K/2024.2-cpeGNU-24.03-rocm']
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['cpeAMD']
+    valid_prog_environs = ['cpeGNU']
     descr = 'CP2K GPU check'
-    tags = {'contrib'}
+    tags = {'contrib', 'performance'}
 
     num_cpus_per_task = 7
     num_tasks = 16
