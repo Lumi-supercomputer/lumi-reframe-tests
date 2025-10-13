@@ -82,9 +82,10 @@ class torch_comm_coll_test(deepspeed_comm):
     coll_type  = parameter(['all_reduce', 'all_gather'])
     run_mode   = parameter(['native', 'torchrun'])
     cont_image = parameter([
-        'rocm-6.2.4-python-3.12-pytorch-v2.6.0',
-        'rocm-6.2.4-python-3.12-pytorch-v2.7.0',
-        'rocm-6.2.4-python-3.12-pytorch-v2.7.1',
+        'rocm-6.2.4-python-3.12-pytorch-v2.6.0-dockerhash-ef203c810cc9', #'rocm-6.2.4-python-3.12-pytorch-v2.6.0',
+        'rocm-6.2.4-python-3.12-pytorch-v2.7.0-dockerhash-2a550b31226f', #'rocm-6.2.4-python-3.12-pytorch-v2.7.0',
+        'rocm-6.2.4-python-3.12-pytorch-v2.7.1-dockerhash-d9febbb382c2', #'rocm-6.2.4-python-3.12-pytorch-v2.7.1',
+        'rocm-6.2.4-python-3.12-pytorch-v2.7.1-dockerhash-0d479e852886',
     ])
 
     tags = {'python', 'performance'}
@@ -105,7 +106,7 @@ class torch_comm_coll_test(deepspeed_comm):
     @run_before('run')
     def set_container_variables(self):
         self.container_platform.image = os.path.join(
-            '/appl/local/containers/sif-images/',
+            '/appl/local/containers/tested-containers/',
             f'lumi-pytorch-{self.cont_image}.sif',
         )
         py_script = 'communication/' + self.coll_type + '.py --scan --dist="torch"'

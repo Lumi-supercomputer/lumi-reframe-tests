@@ -12,9 +12,12 @@ GPUS_PER_NODE=$SLURM_GPUS_PER_NODE
 # This is to workaround AITER issue https://github.com/ROCm/aws-ofi-rccl/issues/16
 export AITER_JIT_DIR=/tmp/my-aiter-jit-dir-$SLURM_LOCALID
 mkdir -p $AITER_JIT_DIR/build
-export JIT_WORKSPACE_DIR=$AITER_JIT_DIR
+#export JIT_WORKSPACE_DIR=$AITER_JIT_DIR
 export CC=clang
 export CXX=clang++
+
+# Turn AITER off
+export USE_ROCM_AITER_ROPE_BACKEND=0
 
 DISTRIBUTED_ARGS="
     --nproc_per_node $GPUS_PER_NODE \
