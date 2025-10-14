@@ -102,6 +102,10 @@ class torch_comm_coll_test(deepspeed_comm):
             self.num_tasks_per_node = 1
             self.num_gpus_per_node = 8
             self.num_cpus_per_task = 56
+        if self.coll_type == 'all_gather':
+            self.extra_resources = {
+               'memory': {'mem_per_node': '100G'}
+           }
 
     @run_before('run')
     def set_container_variables(self):
