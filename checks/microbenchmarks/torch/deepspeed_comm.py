@@ -13,14 +13,6 @@ class deepspeed_comm(rfm.RunOnlyRegressionTest):
 
     perf_relative = variable(float, value=0.0, loggable=True)
 
-    reference = {
-        'lumi:gpu': {
-            'throughput': (815, -0.1, None, 'Gbps'),
-            # We are interested in a single variable per test
-            #'duration': (10.5, -0.1, None, 'ms')
-        }
-    }
-
     @sanity_function
     def assert_job_is_complete(self):
         return sn.all([
@@ -64,6 +56,12 @@ class ds_comm_all_reduce(deepspeed_comm):
 
     tags = {'python', 'contrib', 'performance'}
 
+    reference = {
+        'lumi:gpu': {
+                'throughput': (840, -0.1, None, 'Gbps'),
+        }
+    }
+
     @run_before('run')
     def set_cpu_binding(self):
         self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
@@ -89,6 +87,11 @@ class torch_comm_coll_test(deepspeed_comm):
     ])
 
     tags = {'python', 'performance'}
+
+    allref = {
+                'all_reduce': (840, -0.1, None, 'Gbps'),
+                'all_gather': (775, -0.1, None, 'Gbps') 
+    }
 
     @run_before('run')
     def set_cpu_and_task_binding(self):
@@ -126,4 +129,17 @@ class torch_comm_coll_test(deepspeed_comm):
             'MASTER_PORT':'29500',
             f'WORLD_SIZE': self.num_tasks,
             'SINGULARITYENV_OMP_NUM_THREADS': '7',
+        }
+
+    @run_before('run')
+    def setup_run(self):
+        try:
+            found = self.allref[self.coll_type]
+        except KeyError:
+            self.skip('Missing reference value for throughput')
+
+        self.reference = {
+            '*': {
+                'throughput': self.allref[self.coll_type]
+            }
         }
