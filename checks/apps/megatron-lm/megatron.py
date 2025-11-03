@@ -5,7 +5,7 @@ from reframe.core.backends import getlauncher
 from reframe.utility.osext import cray_cdt_version
 
 class singularity_container_image(rfm.RunOnlyRegressionTest):
-    valid_systems       = ['lumi:dev-g']
+    valid_systems       = ['lumi:gpu']
     valid_prog_environs = ['builtin']
     container_platform  = 'Singularity'
     num_tasks_per_node  = 1
@@ -16,6 +16,10 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
         'rocm-6.2.4-python-3.12-pytorch-v2.6.0',
     ])
     node_config         = parameter(['2node', '8node', '16node'])
+
+    perf_relative = variable(float, value=0.0, loggable=True)
+
+    tags = {'performance'}
 
     @run_before('run')
     def set_launch_settings(self):
@@ -62,7 +66,7 @@ class test_megatron(singularity_container_image):
     @run_before('performance')
     def set_reference(self):
         self.reference = {
-            'lumi:dev-g': self.all_refs[self.node_config]
+            'lumi:gpu': self.all_refs[self.node_config]
         }
 
 
@@ -86,6 +90,18 @@ class test_megatron(singularity_container_image):
             r"tokens/GPU/s:\s+(\d+\.\d+)",
             self.stdout, 1, float
         )
+
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'tokens_per_gpu_per_sec'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
 
     @run_before('run')
     def run_training(self):

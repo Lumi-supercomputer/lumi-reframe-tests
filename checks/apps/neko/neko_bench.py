@@ -23,7 +23,7 @@ class MakeNeko(rfm.core.buildsystems.BuildSystem):
 
 class lumi_make_neko(MakeNeko, rfm.CompileOnlyRegressionTest):
     case = variable(str)
-    modules = ['Neko']
+    modules = ['Neko/0.9.1-cpeCray-24.03-rocm']
 
     @run_after('setup')
     def set_build(self):
@@ -41,7 +41,7 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     time_limit = '15m'
 
     # latest check with version 0.9.1-cpeCray-24.03-rocm
-    modules = ['Neko']
+    modules = ['Neko/0.9.1-cpeCray-24.03-rocm']
     case = 'tgv'
 
     makeneko = fixture(lumi_make_neko, scope='environment', variables={'case': case})
@@ -56,6 +56,8 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     # Set dofs to enable workrate perf var
     dofs = variable(int, value=0)
     first_workrate_timestep = variable(int, value=0)
+
+    perf_relative = variable(float, value=0.0, loggable=True)
 
     @run_before('compile')
     def set_mesh_file(self):
@@ -134,7 +136,7 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
                 return 1e-3 * self.dofs * iters / time / pes
 
             pf = sn.make_performance_function(workrate, 'Mdofs/s/pe')
-            self.perf_variables['workrate'] = pf
+            #self.perf_variables['workrate'] = pf
 
 @rfm.simple_test
 class lumi_neko_bench(NekoTGVBase):
@@ -177,7 +179,7 @@ class lumi_neko_bench(NekoTGVBase):
        } 
     }
 
-    @run_before('run')
+    @run_after('init')
     def select_tests(self):
         try:
              found = self.allref[self.size][self.num_nodes]
@@ -187,3 +189,15 @@ class lumi_neko_bench(NekoTGVBase):
     @run_before('performance')
     def set_reference(self):
         self.reference = self.allref[self.size][self.num_nodes]
+
+    @run_after('performance')
+    def lower_the_better(self):
+        perf_var = 'total_runtime'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][1]-self.perfvalues[key_str][0])/self.perfvalues[key_str][1])

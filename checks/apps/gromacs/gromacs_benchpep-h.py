@@ -32,6 +32,8 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
     tags = {'benchmark', 'contrib', 'gpu'}
     keep_files = ['md.log']
 
+    perf_relative = variable(float, value=0.0, loggable=True)
+
     allref = {
         1: {
             'gpu': (7.3, -0.05, 0.05, 'ns/day'), # update=gpu, gpu resident mode
@@ -152,6 +154,18 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
                 2*self.verlet_buff_tol()
            ),
         ])
+
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'perf'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
 
     @run_before('run')
     def setup_run(self):

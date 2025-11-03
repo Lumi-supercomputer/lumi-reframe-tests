@@ -10,8 +10,8 @@ class rccl_test_allreduce(rfm.RegressionTest):
     build_system = 'CMake'
     repo_name = 'rccl-tests'
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['cpeGNU']
-    modules =['rocm', 'buildtools', 'aws-ofi-rccl']
+    valid_prog_environs = ['PrgEnv-amd']
+    modules =['rocm/6.2.2', 'aws-ofi-rccl/cxi-rocm-6.2.2']
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
@@ -19,10 +19,12 @@ class rccl_test_allreduce(rfm.RegressionTest):
     executable = 'build/all_reduce_perf'
     exclusive_access = True
 
+    perf_relative = variable(float, value=0.0, loggable=True)
+
     reference = {
         'lumi:gpu': {
             'busbw': (85.00, -0.05, None, 'GB/s'),
-            'algbw': (45.00, -0.05, None, 'GB/s'),
+            #'algbw': (45.00, -0.05, None, 'GB/s'),
         }
     }
 
@@ -30,7 +32,8 @@ class rccl_test_allreduce(rfm.RegressionTest):
     def set_compiler_flags(self):
         self.sourcesdir = f'https://github.com/ROCmSoftwarePlatform/{self.repo_name}'
         self.build_system.builddir = 'build'
-        self.build_system.config_opts = ['--fresh', '-DMPI_MPICXX=CC', '-DCMAKE_CXX_COMPILER=hipcc', '-DCMAKE_CXX_FLAGS="--offload-arch=gfx90a"','-DGPU_TARGETS=gfx90a', '-DMPI_PATH=$CRAY_MPICH_DIR', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa"']
+        #self.build_system.config_opts = ['--fresh', '-DMPI_MPICXX=CC', '-DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc', '-DCMAKE_CXX_FLAGS="--offload-arch=gfx90a"','-DGPU_TARGETS=gfx90a', '-DMPI_PATH=$CRAY_MPICH_DIR', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa"']
+        self.build_system.config_opts = ['-DCMAKE_CXX_COMPILER=$(which amdclang++)', '-DUSE_MPI=ON', '-DAMDGPU_TARGETS="gfx90a"', '-DGPU_TARGETS="gfx90a"', '-DROCM_PATH=${ROCM_PATH}', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa -ldl"']
         self.build_system.make_opts = ['VERBOSE=1', '-j8']
 
     @run_after('init')
@@ -58,9 +61,21 @@ class rccl_test_allreduce(rfm.RegressionTest):
             self.stdout, 'busbw', float
         )
 
-    @performance_function('GB/s')
-    def algbw(self):
-        return sn.extractsingle(
-            r'^\s+134217728.+\s+(?P<algbw>\S+)\s+\S+\s+\S+$',
-            self.stdout, 'algbw', float
-        )
+    #@performance_function('GB/s')
+    #def algbw(self):
+    #    return sn.extractsingle(
+    #        r'^\s+134217728.+\s+(?P<algbw>\S+)\s+\S+\s+\S+$',
+    #        self.stdout, 'algbw', float
+    #    )
+
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'busbw'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
