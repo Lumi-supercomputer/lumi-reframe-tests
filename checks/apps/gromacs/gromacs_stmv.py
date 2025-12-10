@@ -18,33 +18,32 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         'energy_step0_tol': 0.001,
     }
 
-    valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['cpeAMD']
+    valid_systems = ['lumi:standard']
+    valid_prog_environs = ['cpeGNU']
 
     release_environ = parameter(['production', 'leading']) 
 
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
-    num_nodes = parameter([1], loggable=True)
-    num_gpus_per_node = 8
+    num_nodes = parameter([1,8,16], loggable=True)
     time_limit = '10m'
-    nb_impl = parameter(['gpu'])
-    update_mode = parameter(['gpu', 'cpu'])
-    #bonded_impl = parameter(['gpu'])
-    bonded_impl = 'gpu'
+    bonded_impl = 'cpu'
     executable = 'gmx_mpi mdrun'
-    tags = {'benchmark', 'contrib', 'gpu'}
+    tags = {'benchmark', 'contrib', 'cpu'}
     keep_files = ['md.log']
 
     allref = {
         1: {
             'gpu': (100.0, -0.05, None, 'ns/day'), # update=gpu, gpu resident mode
-            'cpu': (75.0, -0.05, None, 'ns/day'), # update=cpu, force offload mode
+            'cpu': (10.5, -0.05, None, 'ns/day'), # update=cpu, force offload mode
         },
-        2: {
+        8: {
             'gpu': (76.9, -0.05, None, 'ns/day'), # update=gpu, gpu resident mode
-            'cpu': (62.6, -0.05, None, 'ns/day'), # update=cpu, force offload mode
+            'cpu': (73, -0.05, None, 'ns/day'), # update=cpu, force offload mode
+        },
+        16: {
+            'cpu': (100, -0.05, None, 'ns/day'), # update=cpu, force offload mode
         },
     }
 
@@ -53,15 +52,15 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         match self.release_environ:
             case 'production':
                 #self.modules = ['GROMACS/2024.3-cpeAMD-24.03-rocm', 'rocm/6.0.3', 'AdaptiveCpp/24.06']
-                self.modules = ['GROMACS/2025.3-cpeAMD-24.03-HeFFTe-rocm', 'rocm/6.0.3', 'AdaptiveCpp/24.10.0-cpeAMD-24.03-rocm']
-                self.tags = {'benchmark', 'production', 'contrib', 'gpu'}
+                self.modules = ['GROMACS/2025.3-cpeGNU-24.03-CPU']
+                self.tags = {'benchmark', 'production', 'contrib', 'cpu'}
             case 'leading':
                 self.modules = ['GROMACS', 'rocm', 'AdaptiveCpp']
                 self.tags = {'benchmark', 'testing', 'contrib', 'gpu'}
 
     @run_after('init')
     def prepare_test(self):
-        self.descr = f"GROMACS {self.benchmark_info['name']} benchmark (update mode: {self.update_mode}, bonded: {self.bonded_impl}, non-bonded: {self.nb_impl})"
+        self.descr = f"GROMACS {self.benchmark_info['name']} benchmark cpu"
         bench_file_path = os.path.join(self.current_system.resourcesdir, 
                                       'datasets',
                                       'gromacs',
@@ -73,51 +72,42 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def setup_runtime(self):
-        self.num_tasks_per_node = 8
+        #self.num_tasks_per_node = 128
+        self.num_tasks_per_node = 64
+        self.num_cpus_per_task = 2
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
-        npme_ranks = 1
+        #npme_ranks = 2
 
+        # -nsteps -1 -maxh 0.1 -noconfout -notunepme -resethway -s benchmark.tpr
         self.executable_opts += [
             '-nsteps -1',
-            '-maxh 0.085',  # sets runtime to 5 mins
-            '-nstlist 400', # refer to https://manual.gromacs.org/2024.1/user-guide/mdp-options.html#mdp-nstlist
+            '-maxh 0.1',  # sets runtime to 10 mins
+            #'-nstlist 400', # refer to https://manual.gromacs.org/2024.1/user-guide/mdp-options.html#mdp-nstlist
             '-noconfout',
             '-notunepme',
-            '-resetstep 10000',
-            '-nb', self.nb_impl,
-            '-npme', f'{npme_ranks}',
-            '-pme', 'gpu', 
-            '-update', self.update_mode,
-            '-bonded', self.bonded_impl,
+            #'-resetstep 10000',
+            '-resethway',
+            #'-nb', 'cpu',
+            #'-npme', f'{npme_ranks}',
+            #'-pme', 'cpu', 
+            #'-update', 'cpu',
+            #'-bonded', self.bonded_impl,
             '-s benchmark.tpr'
         ]
         self.env_vars = {
-            'MPICH_GPU_SUPPORT_ENABLED': '1',
-            'OMP_NUM_THREADS': '7',
+            'OMP_NUM_THREADS': '2',
             'OMP_PROC_BIND': 'close',
             'OMP_PLACES': 'cores',
-            'GMX_ENABLE_DIRECT_GPU_COMM': '1',
-            'GMX_FORCE_GPU_AWARE_MPI': '1',
-            'GMX_GPU_PME_DECOMPOSITION': '1',
-            'GMX_PMEONEDD': '1',
+            #'GMX_PMEONEDD': '1',
         }
 
     @run_before('run')
-    def set_cpu_mask(self):
-        cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
-        self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
+    #def set_cpu_mask(self):
+    #    cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
+    #    self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
+    def set_affinity(self):
+        self.job.launcher.options = ['--distribution=block:block:block']
 
-    @run_after('init')
-    def add_select_gpu_wrapper(self):
-        self.prerun_cmds += [
-            'cat << EOF > select_gpu',
-            '#!/bin/bash',
-            'export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID',
-            'exec \$*',
-            'EOF',
-            'chmod +x ./select_gpu'
-        ]
-        self.executable = './select_gpu ' + self.executable
 
     @performance_function('ns/day')
     def perf(self):
@@ -158,7 +148,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def setup_run(self):
         try:
-            found = self.allref[self.num_nodes][self.update_mode]
+            found = self.allref[self.num_nodes][self.bonded_impl]
         except KeyError:
             self.skip(f'Configuration with {self.num_nodes} node(s) of '
                       f'{self.bench_name!r} is not supported on {arch!r}')
@@ -166,6 +156,6 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         # Setup performance references
         self.reference = {
             '*': {
-                'perf': self.allref[self.num_nodes][self.update_mode]
+                'perf': self.allref[self.num_nodes][self.bonded_impl]
             }
         }
