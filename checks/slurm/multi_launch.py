@@ -6,24 +6,36 @@ from reframe.core.backends import getlauncher
 # launched with multiple srun calls interleaved
 @rfm.simple_test
 class MultiLaunchTest(rfm.RunOnlyRegressionTest):
-    valid_systems = ['lumi:gpu', 'lumi:small']
+    valid_systems = ['lumi:small', 'lumi:gpu']
     valid_prog_environs = ['builtin']
     executable = 'wait'
-    num_tasks_per_node = 3
-    num_nodes = 3
-    num_tasks = num_nodes*num_tasks_per_node
-    # Required to mitigate error-configuring-interconnect
+    num_nodes = 1
     exclusive_access = True
+    keep_files = ['rfm_step_*.out']
 
     tags = {'production', 'lumi'}
 
     @run_before('run')
-    def pre_launch(self):
+    def job_alloc_opts(self):
+        self.job.options = ['--distribution=block:block:block'] # block distribution across CCDs
+        if self.current_partition.name in ['gpu']:
+            self.job.options += ['--gpu-bind=closest'] #, '--gpus-per-node=8']
+
+    @run_before('run')
+    def step_alloc_opts(self):
+        if self.current_partition.name in ['gpu']:
+            self.num_tasks_per_node = 7 # occupy one CCD (7 cores, one disabled) per step
+            num_cpus = 56
+        else:
+            self.num_tasks_per_node = 8 # occupy one CCD (8 cores) per step
+            num_cpus = 128
+        self.num_steps = num_cpus // self.num_tasks_per_node
+        self.num_tasks = self.num_nodes*self.num_tasks_per_node
         cmd = self.job.launcher.run_command(self.job)
-        background_cmd = 'hostname'
+        background_cmd = "bash -c 'echo $(hostname):$(taskset -pc $$ | cut -d: -f2); sleep 5'"
         self.prerun_cmds = [
-            f'{cmd} --overlap --exact -N {self.num_nodes} -n {self.num_tasks_per_node} {background_cmd} &'
-            for n in range(1, self.num_nodes+1)
+            f'{cmd} --exact --cpu-bind=verbose --output=rfm_step_%s.out -N {self.num_nodes} -n {self.num_tasks_per_node} {background_cmd} &'
+            for n in range(self.num_steps)
         ]
 
     @run_before('run')
@@ -32,8 +44,11 @@ class MultiLaunchTest(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def validate_test(self):
+        step_bindings = []
+        for s in range(self.num_steps):
+             step_bindings += sn.extractall(r'nid(?P<step_bindings>\S+:\s\S+)', f'rfm_step_{s}.out')
         return sn.assert_eq(
-            sn.count(sn.extractall(r'^nid\d+', self.stdout)), self.num_tasks
+            sn.count_uniq(step_bindings), self.num_tasks*self.num_steps, 'Step bindings are overlapping'
         )
 
 @rfm.simple_test
