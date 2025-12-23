@@ -15,10 +15,12 @@ class deepspeed_comm(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def assert_job_is_complete(self):
-        return sn.all([
-            sn.assert_found(r'Performance of', self.stdout),
-            sn.assert_eq(sn.count( sn.findall('x4', self.stdout) ), 23),
-        ])
+        m = 16
+        for i in range(23):
+            m = m*2
+            if not sn.assert_found(rf'{m}x4', self.stdout):
+                return False
+        return sn.assert_found(r'Performance of', self.stdout)
 
     #@performance_function('ms')
     #def duration(self):
