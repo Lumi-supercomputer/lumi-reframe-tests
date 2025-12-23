@@ -51,7 +51,7 @@ class SingleTask_Check(AffinityTaskBase):
     @sanity_function
     def check_thread_pin(self):
         nthreads = sn.extractsingle(r'Running\s+(\S+)\s+threads\s+.*',self.stdout, 1, int)  
-        thread_mask = sn.extractall(r'mask\s+(?P<mask>\S+)', self.stdout, 'mask', int)
+        thread_mask = sn.extractall(r'mask\s+\((?P<mask>\S+)\)', self.stdout, 'mask', int)
         return sn.assert_eq(nthreads, sn.count_uniq(thread_mask))
 
 @rfm.simple_test
@@ -81,7 +81,7 @@ class HybridTask_Check(AffinityTaskBase):
     @sanity_function
     def check_thread_pin(self):
         for rank in range(self.num_tasks):
-           thread_mask = sn.extractall(rf'MPI rank\s+{rank}\/\S+\s+OpenMP thread\s+\S+\/\S+\s+on cpu\s+\S+\/\S+\s+of\s+\S+\s+mask\s+(?P<mask>\S+)', self.stdout, 'mask', int)
+           thread_mask = sn.extractall(rf'MPI rank\s+{rank}\/{self.num_tasks}.+?mask\s+\((?P<mask>\S+)\)', self.stdout, 'mask', int)
            if self.multithread:
               thread_mask = [t % 64 for t in thread_mask]
            thread_dom = [mask // self.dom_size for mask in thread_mask]
