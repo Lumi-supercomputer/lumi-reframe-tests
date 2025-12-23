@@ -48,7 +48,7 @@ class quantumespresso_check(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class lumi_quantumespresso_cpu_check(quantumespresso_check):
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:cpu']
     valid_prog_environs = ['cpeGNU']
     descr = f'QuantumESPRESSO CPU check'
     time_limit = '15m'
@@ -80,12 +80,12 @@ class lumi_quantumespresso_cpu_check(quantumespresso_check):
     def set_perf_reference(self):
         references = {
             'mpi': {
-                'lumi:small': {
+                'lumi:cpu': {
                     'time': (75.0, None, 0.05, 's')
                 },
             },
             'mpi_omp': {
-                'lumi:small': {
+                'lumi:cpu': {
                     'time': (56.00, None, 0.05, 's')
                 },
             },

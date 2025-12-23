@@ -28,7 +28,7 @@ class SlurmMultiLaunch(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class MultiLaunchTest(SlurmMultiLaunch):
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:cpu']
     valid_prog_environs = ['builtin']
 
     @run_before('run')
@@ -96,7 +96,7 @@ class MultiLaunchGPUTest(SlurmMultiLaunch):
 # launched with multiple srun calls overlapped
 @rfm.simple_test
 class OverlapLaunchTest(rfm.RunOnlyRegressionTest):
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:cpu']
     valid_prog_environs = ['builtin']
     executable = 'wait'
     num_tasks_per_node = 1

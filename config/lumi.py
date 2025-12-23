@@ -26,40 +26,9 @@ site_configuration = {
                     'modules': ['partition/L'],
                     'launcher': 'local'
                 },
-                {
-                    'name': 'small',
-                    'descr': 'Multicore nodes (AMD EPYC 7763, 256|512|1024GB/cn)',
-                    'scheduler': 'slurm',
-                    'time_limit': '10m',
-                    'container_platforms': [
-                        {
-                            'type': 'Singularity',
-                            'modules': []
-                        }
-                    ],
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-aocc',
-                        'PrgEnv-cray',
-                        'PrgEnv-gnu',
-                        'cpeAOCC',
-                        'cpeCray',
-                        'cpeGNU',
-                    ],
-                    'max_jobs': 100,
-                    'modules': ['partition/C'],
-                    'access': ['--partition small',
-                               f'--account={project}'],
-                    'resources': [
-                        {
-                            'name': 'memory',
-                            'options': ['--mem={mem_per_node}']
-                        },
-                    ],
-                    'launcher': 'srun'
-                    },
-                    {
-                    'name': 'standard',
+                { # Instead of separate definition, to run on shared cpu partitions
+                  # use `-Jpartition=small` or `-Jpartition=debug` reframe option
+                    'name': 'cpu',
                     'descr': 'Multicore nodes (AMD EPYC 7763, 256GB/cn)',
                     'scheduler': 'slurm',
                     'time_limit': '10m',
@@ -71,16 +40,14 @@ site_configuration = {
                     ],
                     'environs': [
                         'builtin',
-                        'PrgEnv-aocc',
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
-                        'cpeAOCC',
                         'cpeCray',
                         'cpeGNU',
                     ],
                     'max_jobs': 100,
                     'modules': ['partition/C'],
-                    'access': ['--partition standard',
+                    'access': ['--partition=standard',
                                f'--account={project}'],
                     'resources': [
                         {
@@ -90,7 +57,8 @@ site_configuration = {
                     ],
                     'launcher': 'srun'
                 },
-                {
+                { # Instead of separate definition, to run on shared gpu partitions
+                  # use `-Jpartition=small-g` or `-Jpartition=dev-g` reframe option
                     'name': 'gpu',
                     'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250X 8/cn)',
                     'scheduler': 'slurm',
@@ -111,9 +79,9 @@ site_configuration = {
                         'cpeGNU',
                         'ROCm',
                     ],
-                    'max_jobs': 10,
+                    'max_jobs': 200,
                     'modules': ['partition/G'],
-                    'access': ['--partition small-g',
+                    'access': ['--partition=standard-g',
                                f'--account={project}'],
                     'resources': [
                         {
@@ -129,97 +97,41 @@ site_configuration = {
                     ],
                     'launcher': 'srun'
                 },
-                {
-                    'name': 'dev-g',
-                    'descr': 'Multicore nodes (AMD EPYC 7A53 64-Core, 512|GB/cn), GPU (AMD Instinct MI250X 8/cn)',
-                    'scheduler': 'slurm',
-                    'time_limit': '10m',
-                    'container_platforms': [
-                        {
-                            'type': 'Singularity',
-                            'modules': []
-                        }
-                    ],
-                    'environs': [
-                        'builtin',
-                        'PrgEnv-amd',
-                        'PrgEnv-cray',
-                        'PrgEnv-gnu',
-                        'cpeAMD',
-                        'cpeCray',
-                        'cpeGNU',
-                        'ROCm',
-                    ],
-                    'max_jobs': 2,
-                    'modules': ['partition/G'],
-                    'access': ['--partition dev-g',
-                               f'--account={project}'],
-                    'resources': [
-                        {
-                            'name': 'memory',
-                            'options': ['--mem={mem_per_node}']
-                        },
-                        {
-                            'name': '_rfm_gpu',
-                            'options': ['--gpus-per-node={num_gpus_per_node}']
-                        },
-                    ],
-                    'launcher': 'srun'
-                },
             ]
         },
     ],
     'environments': [
         {
-            'name': 'PrgEnv-aocc',
-            'target_systems': ['lumi:small', 'lumi:standard'],
-            'modules': ['PrgEnv-amd']
-        },
-        {
             'name': 'PrgEnv-amd',
-            'target_systems': ['lumi:gpu', 'lumi:dev-g'],
-            'modules': ['PrgEnv-amd']
+            'modules': ['PrgEnv-amd'],
         },
         {
             'name': 'PrgEnv-cray',
-            'target_systems': ['lumi'],
-            'modules': ['PrgEnv-cray']
+            'modules': ['PrgEnv-cray'],
         },
         {
             'name': 'PrgEnv-gnu',
-            'target_systems': ['lumi'],
-            'modules': ['PrgEnv-gnu']
+            'modules': ['PrgEnv-gnu'],
         },
         {
             'name': 'cpeAMD',
-            'target_systems': ['lumi:gpu', 'lumi:dev-g'],
-            'modules': ['cpeAMD']
-        },
-        {
-            'name': 'cpeAOCC',
-            'target_systems': ['lumi:small', 'lumi:standard'],
-            'modules': ['cpeAOCC']
+            'modules': ['cpeAMD'],
         },
         {
             'name': 'cpeCray',
-            'target_systems': ['lumi'],
-            'modules': ['cpeCray']
+            'modules': ['cpeCray'],
         },
         {
             'name': 'cpeGNU',
-            'target_systems': ['lumi'],
-            'modules': ['cpeGNU']
+            'modules': ['cpeGNU'],
         },
         {
             'name': 'ROCm',
             'cc': 'hipcc',
             'cxx': 'hipcc',
             'ftn': '',
-            #'cflags': 
-            #'ldflags': 
             'cppflags': ['-D__HIP_PLATFORM_AMD__'],
             'modules': ['rocm'],
-            'target_systems': ['lumi:gpu', 'lumi:dev-g']
         }
     ],
     'logging': [

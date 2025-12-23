@@ -47,33 +47,6 @@ class deepspeed_comm(rfm.RunOnlyRegressionTest):
             self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
 
 @rfm.simple_test
-class ds_comm_all_reduce(deepspeed_comm):
-    modules = ['PyTorch/2.6.0-rocm-6.2.4-python-3.12-singularity-20250410']
-    dist_mode = parameter(['deepspeed', 'torch'])
-    num_tasks = 16
-    num_tasks_per_node = 8
-    num_gpus_per_node = 8
-
-    tags = {'python', 'contrib', 'performance'}
-
-    reference = {
-        'lumi:gpu': {
-                'throughput': (840, -0.1, None, 'Gbps'),
-        }
-    }
-
-    @run_before('run')
-    def set_cpu_binding(self):
-        self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
-
-    @run_before('run')
-    def set_container_variables(self):
-        self.container_platform = 'Singularity'
-        self.container_platform.image = '$SIFPYTORCH'
-        self.container_platform.command = f'bash conda-python-distributed.sh -u communication/all_reduce.py --scan --dist="{self.dist_mode}"'
-        self.container_platform.env_vars = {'NCCL_DEBUG': 'INFO'}
-
-@rfm.simple_test
 class torch_comm_coll_test(deepspeed_comm):
     container_platform = 'Singularity'
     
@@ -82,8 +55,7 @@ class torch_comm_coll_test(deepspeed_comm):
     cont_image = parameter([
         'rocm-6.2.4-python-3.12-pytorch-v2.6.0-dockerhash-ef203c810cc9', #'rocm-6.2.4-python-3.12-pytorch-v2.6.0',
         'rocm-6.2.4-python-3.12-pytorch-v2.7.0-dockerhash-2a550b31226f', #'rocm-6.2.4-python-3.12-pytorch-v2.7.0',
-        'rocm-6.2.4-python-3.12-pytorch-v2.7.1-dockerhash-d9febbb382c2', #'rocm-6.2.4-python-3.12-pytorch-v2.7.1',
-        'rocm-6.2.4-python-3.12-pytorch-v2.7.1-dockerhash-0d479e852886',
+        'rocm-6.2.4-python-3.12-pytorch-v2.7.1-dockerhash-0d479e852886', #'rocm-6.2.4-python-3.12-pytorch-v2.7.1',
     ])
 
     tags = {'python', 'performance'}

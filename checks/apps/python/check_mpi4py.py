@@ -28,7 +28,7 @@ class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
                 'LD_PRELOAD': '${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so'
             }
         if self.device_type == 'cpu':
-            self.valid_systems = ['lumi:small']
+            self.valid_systems = ['lumi:cpu']
             self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['cray-python']
             self.executable_opts = ['osu_bw.py']
@@ -59,7 +59,7 @@ class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
 class mpi4py_osu_pt2pt_bw_two_nodes_test(mpi4py_osu_pt2pt_bw_base):
     reference = {
         'lumi:gpu':   {'bandwidth': (23952.10, -0.05, None, 'MB/s')},
-        'lumi:small': {'bandwidth': (22000.0, -0.05, None, 'MB/s')},
+        'lumi:cpu': {'bandwidth': (22000.0, -0.05, None, 'MB/s')},
     }
 
     @run_before('run')
