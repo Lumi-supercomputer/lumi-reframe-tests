@@ -12,7 +12,7 @@ class AffinityTaskBase(rfm.RunOnlyRegressionTest):
 
     # Variables to control the hint and binding options on the launcher.
     multithread = parameter([True, False])
-    valid_systems = ['lumi:gpu', 'lumi:small']
+    valid_systems = ['lumi:gpu', 'lumi:cpu']
     valid_prog_environs = ['builtin']
     maintainers = ['mszpindler']
     tags = {'production', 'lumi'}
@@ -66,7 +66,7 @@ class HybridTask_Check(AffinityTaskBase):
         if self.current_partition.name in ['gpu']:
             self.num_tasks = 8
             self.num_threads = 7 
-        elif self.current_partition.name in ['small']:
+        elif self.current_partition.name in ['cpu']:
             self.num_tasks = 16
             self.num_threads = 8 
 
@@ -75,7 +75,7 @@ class HybridTask_Check(AffinityTaskBase):
         if self.current_partition.name in ['gpu']:
             cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
             self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
-        elif self.current_partition.name in ['small']:
+        elif self.current_partition.name in ['cpu']:
             self.job.launcher.options = [f'--cpus-per-task={self.num_threads}']
 
     @sanity_function

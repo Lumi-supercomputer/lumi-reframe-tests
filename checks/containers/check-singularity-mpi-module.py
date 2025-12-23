@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class base_container_mpi(rfm.RunOnlyRegressionTest):
     descr = 'Test the singularity bindings with base container'
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:cpu']
     valid_prog_environs = ['builtin']
     container_platform = 'Singularity'
     num_tasks = 2
@@ -13,7 +13,7 @@ class base_container_mpi(rfm.RunOnlyRegressionTest):
     tags = {'container'}
 
     reference = {
-        'lumi:small': {'bandwidth': (22180.76, -0.05, None, 'MB/s')}
+        'lumi:cpu': {'bandwidth': (22180.76, -0.05, None, 'MB/s')}
     }
 
     @run_before('run')

@@ -7,7 +7,7 @@ from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 class lumi_gromacs_hecbiosim(gromacs_check):
     descr = """This is to test MPI version of GROMACS.""" 
 
-    valid_systems = ['lumi:standard']
+    valid_systems = ['lumi:cpu']
     valid_prog_environs = ['cpeGNU']
     module_ver = parameter([
         '2023.3-cpeGNU-23.09-CPU',

@@ -9,7 +9,7 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
 
     # TODO: Make sure that the GPU timings are meaningfull.
     reference = {
-        'lumi:small': {'time': (152.644, None, 0.05, 's')},
+        'lumi:cpu': {'time': (152.644, None, 0.05, 's')},
         'lumi:gpu': {'time': (165.0, None, 0.05, 's')},
     }
 
@@ -50,7 +50,7 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class lumi_cp2k_cpu_check(cp2k_check):
     modules = ['CP2K']
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:cpu']
     valid_prog_environs = ['cpeGNU']
     descr = f'CP2K CPU check'
     tags = {'contrib', 'performance'}

@@ -55,7 +55,7 @@ class lumi_osu_benchmarks(osu_build_run):
             self.modules = ['libfabric', 'rocm']
             self.env_vars = {'MPICH_GPU_SUPPORT_ENABLED': '1'} 
         else:
-            self.valid_systems = ['lumi:standard']
+            self.valid_systems = ['lumi:cpu']
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
 
     @run_before('run')
@@ -97,7 +97,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
     allref = {
         'mpi.pt2pt.standard.osu_mbw_mr' : {
             'cpu': {
-                'lumi:standard': {
+                'lumi:cpu': {
                     'bandwidth': (29500.0, -0.05, 0.05, 'MB/s')
                 }
             },
@@ -109,7 +109,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
         },
         'mpi.pt2pt.standard.osu_bw': {
             'cpu': {
-                'lumi:standard': {
+                'lumi:cpu': {
                     'bandwidth': (24044.0, -0.05, 0.05, 'MB/s')
                 }
             },
@@ -121,7 +121,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
         },
         'mpi.pt2pt.standard.osu_latency': {
             'cpu': {
-                'lumi:standard': {
+                'lumi:cpu': {
                     'latency': (1.8, -0.2, 0.2, 'us')
                 }
             },
@@ -133,7 +133,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
         },
         'mpi.pt2pt.standard.osu_multi_lat': {
             'cpu': {
-                'lumi:standard': {
+                'lumi:cpu': {
                     'latency': (1.95, -0.2, 0.2, 'us')
                 }
             },
@@ -178,7 +178,7 @@ class lumi_osu_pt2pt_check(lumi_osu_benchmarks):
 
 @rfm.simple_test
 class lumi_osu_collective_check(lumi_osu_benchmarks):
-    valid_systems = ['lumi:standard', 'lumi:gpu'] 
+    valid_systems = ['lumi:cpu', 'lumi:gpu'] 
     use_multithreading = False
     # third naming level has been added in versions 7.x of OSU microbenchmarks
     benchmark_info = parameter([
@@ -190,7 +190,7 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
         'mpi.collective.blocking.osu_allreduce': {
             1: {
                 'cpu': {
-                    'lumi:standard': {
+                    'lumi:cpu': {
                         'latency': (4.85, -0.2, 0.2, 'us')
                     },
                 },
@@ -202,7 +202,7 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
             },
             2: {
                 'cpu': {
-                    'lumi:standard': {
+                    'lumi:cpu': {
                         'latency': (7.5, -0.2, 0.2, 'us')
                     },
                 },
@@ -214,7 +214,7 @@ class lumi_osu_collective_check(lumi_osu_benchmarks):
             },
             4: {
                 'cpu': {
-                    'lumi:standard': {
+                    'lumi:cpu': {
                         'latency': (10.5, -0.25, 0.25, 'us')
                     },
                 },
