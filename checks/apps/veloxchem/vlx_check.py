@@ -48,12 +48,12 @@ class vlx_check(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class veloxchem_g_quad(vlx_check):
-    num_tasks = 2
-    time_limit = '26m'
+    num_tasks = 8
+    time_limit = '13m'
 
     references = {
         'lumi:gpu': {
-            'time': (1500, None, 0.05, 's')
+            'time': (745, None, 0.05, 's')
         }
     }
 
