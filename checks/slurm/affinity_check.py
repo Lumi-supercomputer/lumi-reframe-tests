@@ -69,11 +69,16 @@ class HybridTask_Check(AffinityTaskBase):
         elif self.current_partition.name in ['cpu']:
             self.num_tasks = 16
             self.num_threads = 8 
+        if self.multithread:
+            self.num_threads *= 2
 
     @run_before('run')
     def set_num_cpus_per_task(self):
         if self.current_partition.name in ['gpu']:
-            cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
+            if self.multithread:
+                cpu_bind_mask = '0xfe00000000000000fe000000000000,0xfe00000000000000fe00000000000000,0xfe00000000000000fe0000,0xfe00000000000000fe000000,0xfe00000000000000fe,0xfe00000000000000fe00,0xfe00000000000000fe00000000,0xfe00000000000000fe0000000000'
+            else:
+                cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
             self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
         elif self.current_partition.name in ['cpu']:
             self.job.launcher.options = [f'--cpus-per-task={self.num_threads}']
