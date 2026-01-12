@@ -23,7 +23,7 @@ class MakeNeko(rfm.core.buildsystems.BuildSystem):
 
 class lumi_make_neko(MakeNeko, rfm.CompileOnlyRegressionTest):
     case = variable(str)
-    modules = ['Neko/0.9.1-cpeCray-24.03-rocm']
+    modules = ['Neko/0.9.1-cpeCray-25.03-rocm']
 
     @run_after('setup')
     def set_build(self):

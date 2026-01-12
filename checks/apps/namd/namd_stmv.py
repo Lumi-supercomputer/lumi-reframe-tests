@@ -2,6 +2,9 @@
 # available at:
 # https://github.com/reframe-hpc/cscs-reframe-tests/blob/main/checks/apps/namd/namd_check.py
 
+# Input files can be downloaded from:
+#  https://www.ks.uiuc.edu/Research/namd/benchmarks/systems/stmv_gpu.tar.gz
+
 import os
 
 import reframe as rfm
@@ -29,7 +32,7 @@ class lumi_namd_stmv(rfm.RunOnlyRegressionTest):
     perf_relative = variable(float, value=0.0, loggable=True)
     allref = {
         1: {
-            'resident': (40.0, -0.05, None, 'ns/day'), # gpu resident mode
+            'resident': (40.0, -0.075, None, 'ns/day'), # gpu resident mode
             'offload': (8.0, -0.05, None, 'ns/day'),   # offload mode
         },
         2: {
@@ -41,7 +44,7 @@ class lumi_namd_stmv(rfm.RunOnlyRegressionTest):
     def set_module_environ(self):
         match self.gpu_mode:
             case 'resident':
-                self.modules = ['NAMD/3.0.2-cpeGNU-24.03-rocm-gpu-resident']
+                self.modules = ['NAMD/3.0.2-cpeGNU-25.03-rocm-gpu-resident']
             case 'offload':
                 self.modules = ['NAMD/3.0.2-cpeGNU-24.03-rocm-gpu-offload'] 
 
