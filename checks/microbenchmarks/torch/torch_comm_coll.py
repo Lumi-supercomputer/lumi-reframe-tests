@@ -85,7 +85,7 @@ class torch_comm_coll_test(deepspeed_comm):
     @run_before('run')
     def set_container_variables(self):
         self.container_platform.image = os.path.join(
-            '/appl/local/containers/tested-containers/',
+            '/appl/lumi/containers/easybuild-sif-images/',
             f'lumi-pytorch-{self.cont_image}.sif',
         )
         py_script = 'communication/' + self.coll_type + '.py --scan --dist="torch"'
