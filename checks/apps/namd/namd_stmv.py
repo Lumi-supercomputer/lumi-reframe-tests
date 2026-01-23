@@ -46,7 +46,7 @@ class lumi_namd_stmv(rfm.RunOnlyRegressionTest):
             case 'resident':
                 self.modules = ['NAMD/3.0.2-cpeGNU-25.03-rocm-gpu-resident']
             case 'offload':
-                self.modules = ['NAMD/3.0.2-cpeGNU-24.03-rocm-gpu-offload'] 
+                self.modules = ['NAMD/3.0.2-cpeGNU-25.03-rocm-gpu-offload'] 
 
     @run_before('run')
     def prepare_test(self):

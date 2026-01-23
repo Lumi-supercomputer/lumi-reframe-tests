@@ -19,6 +19,9 @@ class rccl_test_allreduce(rfm.RegressionTest):
     executable = 'build/all_reduce_perf'
     exclusive_access = True
 
+    # This mitigates problem with internet access on compute nodes
+    build_locally= False
+
     perf_relative = variable(float, value=0.0, loggable=True)
 
     reference = {
@@ -30,8 +33,7 @@ class rccl_test_allreduce(rfm.RegressionTest):
 
     @run_before('compile')
     def set_compiler_flags(self):
-        #self.sourcesdir = f'https://github.com/ROCmSoftwarePlatform/{self.repo_name}'
-        self.sourcesdir = '/users/maciszpin/ROCm-rccl-tests-66e513c'
+        self.sourcesdir = f'https://github.com/ROCmSoftwarePlatform/{self.repo_name}'
         self.build_system.builddir = 'build'
         #self.build_system.config_opts = ['--fresh', '-DMPI_MPICXX=CC', '-DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc', '-DCMAKE_CXX_FLAGS="--offload-arch=gfx90a"','-DGPU_TARGETS=gfx90a', '-DMPI_PATH=$CRAY_MPICH_DIR', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa"']
         self.build_system.config_opts = ['-DCMAKE_CXX_COMPILER=$(which amdclang++)', '-DUSE_MPI=ON', '-DAMDGPU_TARGETS="gfx90a"', '-DGPU_TARGETS="gfx90a"', '-DROCM_PATH=${ROCM_PATH}', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa -ldl"']

@@ -41,7 +41,7 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     time_limit = '15m'
 
     # latest check with version 0.9.1-cpeCray-24.03-rocm
-    modules = ['Neko/0.9.1-cpeCray-24.03-rocm']
+    modules = ['Neko/0.9.1-cpeCray-25.03-rocm']
     case = 'tgv'
 
     makeneko = fixture(lumi_make_neko, scope='environment', variables={'case': case})
