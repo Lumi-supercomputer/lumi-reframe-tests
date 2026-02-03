@@ -15,7 +15,7 @@ class cp2k_check(rfm.RunOnlyRegressionTest):
     def assert_energy_diff(self):
         energy = sn.extractsingle(
             r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
-            r'energy [\[\(]a\.u\.[\]\)]:\s+(?P<energy>\S+)',
+            r'energy [\[\(][hatreu.]+[\]\)]\s+(?P<energy>\S+)',
             self.stdout, 'energy', float, item=-1
         )
         energy_reference = -4404.2323
