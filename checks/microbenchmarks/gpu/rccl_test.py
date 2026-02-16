@@ -10,17 +10,14 @@ class rccl_test_allreduce(rfm.RegressionTest):
     build_system = 'CMake'
     repo_name = 'rccl-tests'
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['builtin']
-    modules =['rocm', 'aws-ofi-nccl']
+    valid_prog_environs = ['PrgEnv-amd']
+    modules =['rocm', 'aws-ofi-nccl/1.18.0-rocm']
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
     executable_opts = ['-b 2M', '-e 2048M', '-f 2', '-g 1', '-z 1', '-t 1', '-R 1', '-n 80', '-w 5', '-d half']
     executable = 'build/all_reduce_perf'
     exclusive_access = True
-
-    # This mitigates problem with internet access on compute nodes
-    build_locally= False
 
     perf_relative = variable(float, value=0.0, loggable=True)
 
@@ -35,8 +32,8 @@ class rccl_test_allreduce(rfm.RegressionTest):
     def set_compiler_flags(self):
         self.sourcesdir = f'https://github.com/ROCmSoftwarePlatform/{self.repo_name}'
         self.build_system.builddir = 'build'
-        #self.build_system.config_opts = ['--fresh', '-DMPI_MPICXX=CC', '-DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc', '-DCMAKE_CXX_FLAGS="--offload-arch=gfx90a"','-DGPU_TARGETS=gfx90a', '-DMPI_PATH=$CRAY_MPICH_DIR', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa"']
-        self.build_system.config_opts = ['-DCMAKE_CXX_COMPILER=$(which amdclang++)', '-DUSE_MPI=ON', '-DAMDGPU_TARGETS="gfx90a"', '-DGPU_TARGETS="gfx90a"', '-DROCM_PATH=${ROCM_PATH}', '-DCMAKE_EXE_LINKER_FLAGS="$PE_MPICH_GTL_DIR_amd_gfx90a -lmpi_gtl_hsa -ldl"']
+        self.build_system.flags_from_environ= False
+        self.build_system.config_opts = ['-DCMAKE_C_COMPILER=${ROCM_PATH}/bin/amdclang', '-DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/amdclang++', '-DUSE_MPI=ON', '-DAMDGPU_TARGETS="gfx90a"', '-DGPU_TARGETS="gfx90a"', '-DROCM_PATH=${ROCM_PATH}', '-DCMAKE_PREFIX_PATH=${ROCM_PATH}/lib/cmake/hip'] 
         self.build_system.make_opts = ['VERBOSE=1', '-j8']
 
     @run_after('init')
@@ -46,7 +43,6 @@ class rccl_test_allreduce(rfm.RegressionTest):
             'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
             'NCCL_NET_GDR_LEVEL': '3',
             'NCCL_ENABLE_DMABUF_SUPPORT': '1',
-            'MPICH_GPU_SUPPORT_ENABLED': '1',
         }
     
     @run_before('run')
