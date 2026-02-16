@@ -10,14 +10,17 @@ class rccl_test_allreduce(rfm.RegressionTest):
     build_system = 'CMake'
     repo_name = 'rccl-tests'
     valid_systems = ['lumi:gpu']
-    valid_prog_environs = ['PrgEnv-amd']
-    modules =['rocm/6.2.2', 'aws-ofi-rccl/cxi-rocm-6.2.2']
+    valid_prog_environs = ['builtin']
+    modules =['rocm', 'aws-ofi-nccl']
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
     executable_opts = ['-b 2M', '-e 2048M', '-f 2', '-g 1', '-z 1', '-t 1', '-R 1', '-n 80', '-w 5', '-d half']
     executable = 'build/all_reduce_perf'
     exclusive_access = True
+
+    # This mitigates problem with internet access on compute nodes
+    build_locally= False
 
     perf_relative = variable(float, value=0.0, loggable=True)
 

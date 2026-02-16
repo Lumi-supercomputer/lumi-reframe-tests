@@ -68,7 +68,7 @@ class lumi_cp2k_gpu_check(cp2k_check):
 
     The way how CP2K is called is based on the [documentation](https://lumi-supercomputer.github.io/LUMI-EasyBuild-docs/c/CP2K/#example-batch-scripts)
     """
-    modules = ['CP2K/2024.2-cpeGNU-24.03-rocm']
+    modules = ['CP2K/2025.2-cpeGNU-25.03-rocm']
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeGNU']
     descr = 'CP2K GPU check'
