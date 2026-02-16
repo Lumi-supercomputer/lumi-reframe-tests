@@ -40,7 +40,7 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     exclusive_access = True
     time_limit = '15m'
 
-    # latest check with version 0.9.1-cpeCray-24.03-rocm
+    # tested on the TDS, not working on the system with 25.03 
     modules = ['Neko/0.9.1-cpeCray-25.03-rocm']
     case = 'tgv'
 

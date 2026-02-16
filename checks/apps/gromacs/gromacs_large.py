@@ -45,10 +45,10 @@ class lumi_gromacs_large(rfm.RunOnlyRegressionTest):
     def set_module_environ(self):
         match self.release_environ:
             case 'production':
-                self.modules = ['GROMACS/2024.3-cpeAMD-24.03-rocm', 'rocm/6.0.3', 'AdaptiveCpp/24.06']
+                self.modules = ['GROMACS/2025.4-cpeAMD-25.03-HeFFTe-rocm', 'rocm/6.3.4', 'AdaptiveCpp/25.10']
                 self.tags = {'benchmark', 'production', 'contrib', 'gpu'}
             case 'leading':
-                self.modules = ['GROMACS/2025.1-cpeAMD-24.03-HeFFTe-rocm', 'rocm/6.2.2', 'AdaptiveCpp/24.06']
+                self.modules = ['GROMACS/2026.0-cpeAMD-25.03-HeFFTe-rocm-hip', 'rocm/6.3.4','AdaptiveCpp/25.02']
                 self.tags = {'benchmark', 'testing', 'contrib', 'gpu'}
 
     @run_after('init')
