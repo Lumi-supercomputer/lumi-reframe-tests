@@ -2,6 +2,9 @@
 # available at:
 # https://github.com/reframe-hpc/cscs-reframe-tests/blob/main/checks/apps/namd/namd_check.py
 
+# Input files can be downloaded from:
+#  https://www.ks.uiuc.edu/Research/namd/benchmarks/systems/stmv_gpu.tar.gz
+
 import os
 
 import reframe as rfm
@@ -24,12 +27,12 @@ class lumi_namd_stmv(rfm.RunOnlyRegressionTest):
     time_limit = '10m'
 
     executable = 'namd3'
-    tags = {'benchmark', 'contrib', 'gpu'}
+    tags = {'benchmark', 'contrib', 'gpu', 'performance'}
 
     perf_relative = variable(float, value=0.0, loggable=True)
     allref = {
         1: {
-            'resident': (40.0, -0.05, None, 'ns/day'), # gpu resident mode
+            'resident': (40.0, -0.075, None, 'ns/day'), # gpu resident mode
             'offload': (8.0, -0.05, None, 'ns/day'),   # offload mode
         },
         2: {
@@ -41,9 +44,9 @@ class lumi_namd_stmv(rfm.RunOnlyRegressionTest):
     def set_module_environ(self):
         match self.gpu_mode:
             case 'resident':
-                self.modules = ['NAMD/3.0.2-cpeGNU-24.03-rocm-gpu-resident']
+                self.modules = ['NAMD/3.0.2-cpeGNU-25.03-rocm-gpu-resident']
             case 'offload':
-                self.modules = ['NAMD/3.0.2-cpeGNU-24.03-rocm-gpu-offload'] 
+                self.modules = ['NAMD/3.0.2-cpeGNU-25.03-rocm-gpu-offload'] 
 
     @run_before('run')
     def prepare_test(self):
@@ -99,10 +102,21 @@ class lumi_namd_stmv(rfm.RunOnlyRegressionTest):
 
     @performance_function('ns/day')
     def perf(self):
-        return = sn.avg(sn.extractall(
+        return sn.avg(sn.extractall(
             r'Info: Benchmark time: \S+ CPUs \S+ s/step (?P<ns_per_day>\S+) ns/day \S+ MB memory',
             self.stdout, 'ns_per_day', float))
-        #self.perf_relative = sn.evaluate(performance - self.allref[self.num_nodes][self.gpu_mode][0])
+
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'perf'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
 
     @run_after('init')
     def setup_run(self):

@@ -9,6 +9,10 @@ class quantumespresso_check(rfm.RunOnlyRegressionTest):
     executable_opts += ['-in', 'ausurf.in', '-pd', '.true.']
     maintainers = ['mszpindler']
 
+    tags = {'contrib', 'performance'}
+
+    perf_relative = variable(float, value=0.0, loggable=True)
+
     @sanity_function
     def assert_simulation_success(self):
         energy = sn.extractsingle(
@@ -30,10 +34,21 @@ class quantumespresso_check(rfm.RunOnlyRegressionTest):
         return sn.extractsingle(r'electrons.+\s(?P<wtime>\S+)s WALL',
                                 self.stdout, 'wtime', float)
 
+    @run_after('performance')
+    def lower_the_better(self):
+        perf_var = 'time'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][1]-self.perfvalues[key_str][0])/self.perfvalues[key_str][1])
 
 @rfm.simple_test
 class lumi_quantumespresso_cpu_check(quantumespresso_check):
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:cpu']
     valid_prog_environs = ['cpeGNU']
     descr = f'QuantumESPRESSO CPU check'
     time_limit = '15m'
@@ -61,17 +76,16 @@ class lumi_quantumespresso_cpu_check(quantumespresso_check):
                 'OMP_NUM_THREADS': self.num_cpus_per_task,
             }
 
-
     @run_before('performance')
     def set_perf_reference(self):
         references = {
             'mpi': {
-                'lumi:small': {
-                    'time': (56.0, None, 0.05, 's')
+                'lumi:cpu': {
+                    'time': (75.0, None, 0.05, 's')
                 },
             },
             'mpi_omp': {
-                'lumi:small': {
+                'lumi:cpu': {
                     'time': (56.00, None, 0.05, 's')
                 },
             },

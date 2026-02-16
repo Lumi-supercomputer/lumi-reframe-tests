@@ -12,7 +12,9 @@ class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
     num_tasks = 2
     executable = 'python'
 
-    tags = {'production', 'python', 'craype', 'contrib/22.08', 'contrib/22.12'}
+    perf_relative = variable(float, value=0.0, loggable=True)
+
+    tags = {'production', 'python', 'craype', 'contrib', 'performance'}
 
     @run_after('init')
     def setup_test(self):
@@ -26,7 +28,7 @@ class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
                 'LD_PRELOAD': '${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so'
             }
         if self.device_type == 'cpu':
-            self.valid_systems = ['lumi:small']
+            self.valid_systems = ['lumi:cpu']
             self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['cray-python']
             self.executable_opts = ['osu_bw.py']
@@ -41,11 +43,23 @@ class mpi4py_osu_pt2pt_bw_base(rfm.RunOnlyRegressionTest):
         return sn.extractsingle(r'4194304\s+(?P<bw>\S+)',
                                 self.stdout, 'bw', float)
 
+    @run_after('performance')
+    def higher_the_better(self):
+        perf_var = 'bandwidth'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][0]-self.perfvalues[key_str][1])/self.perfvalues[key_str][1])
 
 @rfm.simple_test
 class mpi4py_osu_pt2pt_bw_two_nodes_test(mpi4py_osu_pt2pt_bw_base):
     reference = {
-        'lumi:gpu': {'bandwidth': (23952.10, -0.05, None, 'MB/s')}
+        'lumi:gpu':   {'bandwidth': (23952.10, -0.05, None, 'MB/s')},
+        'lumi:cpu': {'bandwidth': (22000.0, -0.05, None, 'MB/s')},
     }
 
     @run_before('run')

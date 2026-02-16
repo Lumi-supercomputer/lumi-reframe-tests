@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class CCompilerVersion(rfm.RegressionTest):
     descr = 'Checks for C compiler version executed by cc wrapper'
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:cpu', 'lumi:gpu']
     valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-amd', 'PrgEnv-gnu']
     build_system = 'SingleSource'
     sourcepath = 'cc_version.c'
@@ -21,7 +21,7 @@ class CCompilerVersion(rfm.RegressionTest):
 @rfm.simple_test
 class FCompilerVersion(rfm.RegressionTest):
     descr = 'Checks for Fortran compiler version executed by ftn wrapper'
-    valid_systems = ['lumi:small']
+    valid_systems = ['lumi:cpu']
     valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
     build_system = 'SingleSource'
     sourcepath = 'ftn_version.F90'

@@ -16,6 +16,8 @@ class ELPA_Cholesky_GPU(rfm.RegressionTest):
     num_gpus_per_node = 1
     tasks = 1
 
+    perf_relative = variable(float, value=0.0, loggable=True)
+
     tags = {'production', 'contrib'}
 
     reference = {
@@ -43,3 +45,14 @@ class ELPA_Cholesky_GPU(rfm.RegressionTest):
         return sn.extractsingle(r'\s+\S+\s+gpublas\s+\S+\s+(?P<time>\S+)',
                                    self.stdout, 'time', float)
 
+    @run_after('performance')
+    def lower_the_better(self):
+        perf_var = 'gpublas_timing'
+        key_str = self.current_partition.fullname+':'+perf_var
+        try:
+            found = self.perfvalues[key_str]
+        except KeyError:
+            return None
+
+        if self.perfvalues[key_str][1] != 0:
+            self.perf_relative = ((self.perfvalues[key_str][1]-self.perfvalues[key_str][0])/self.perfvalues[key_str][1])
