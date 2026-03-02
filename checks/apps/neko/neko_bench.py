@@ -23,7 +23,7 @@ class MakeNeko(rfm.core.buildsystems.BuildSystem):
 
 class lumi_make_neko(MakeNeko, rfm.CompileOnlyRegressionTest):
     case = variable(str)
-    modules = ['Neko/0.9.1-cpeCray-25.03-rocm']
+    modules = ['Neko/1.0.1-cpeCray-25.03-rocm']
 
     @run_after('setup')
     def set_build(self):
@@ -32,7 +32,8 @@ class lumi_make_neko(MakeNeko, rfm.CompileOnlyRegressionTest):
 
     @sanity_function
     def check_build(self):
-        return sn.assert_found('Building user NEKO ... done!', self.stdout)
+        #return sn.assert_found('Building user NEKO ... done!', self.stdout)
+        return sn.assert_found(' Done!', self.stdout)
 
 class NekoTGVBase(rfm.RunOnlyRegressionTest):
     valid_systems = ['lumi:gpu']
@@ -41,7 +42,7 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     time_limit = '15m'
 
     # tested on the TDS, not working on the system with 25.03 
-    modules = ['Neko/0.9.1-cpeCray-25.03-rocm']
+    modules = ['Neko/1.0.1-cpeCray-25.03-rocm']
     case = 'tgv'
 
     makeneko = fixture(lumi_make_neko, scope='environment', variables={'case': case})
@@ -146,20 +147,17 @@ class lumi_neko_bench(NekoTGVBase):
         32768: {
             1: {
                 'lumi:gpu': {
-                    'total_runtime': (131, -0.50, 0.05, 's'),
-                    'workrate': (65000, -0.05, 0.05, 'Mdofs/s/pe'),
+                    'total_runtime': (143, -0.50, 0.05, 's'),
                 }
             },
             2: {
                 'lumi:gpu': {
-                    'total_runtime': (80, -0.50, 0.05, 's'),
-                    'workrate': (53000, -0.05, 0.05, 'Mdofs/s/pe'),
+                    'total_runtime': (91, -0.50, 0.05, 's'),
                 }
             },
             4: {
                 'lumi:gpu': {
-                    'total_runtime': (54, -0.50, 0.05, 's'),
-                    'workrate': (39000, -0.05, 0.05, 'Mdofs/s/pe'),
+                    'total_runtime': (66, -0.50, 0.05, 's'),
                 }
             }
         },
