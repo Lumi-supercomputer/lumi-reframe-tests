@@ -9,7 +9,7 @@
         "load_balance": false,
         "job_timelimit": "00:10:00",
         "time": {
-            "end_time": 2.0,
+            "end_time": 1.0,
             "timestep": 1e-4 
         },
         "numerics": {

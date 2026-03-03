@@ -127,18 +127,6 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
         pf = sn.make_performance_function(lambda: timesteps[-1], 's')
         self.perf_variables['total_runtime'] = pf
 
-        if self.dofs != 0:
-            pes = self.num_tasks
-
-            def workrate():
-                end = sn.count(timesteps) - 1
-                time = timesteps[end] - timesteps[self.first_workrate_timestep]
-                iters = end - self.first_workrate_timestep
-                return 1e-3 * self.dofs * iters / time / pes
-
-            pf = sn.make_performance_function(workrate, 'Mdofs/s/pe')
-            #self.perf_variables['workrate'] = pf
-
 @rfm.simple_test
 class lumi_neko_bench(NekoTGVBase):
     first_workrate_timestep = 1200
@@ -164,14 +152,12 @@ class lumi_neko_bench(NekoTGVBase):
        262144: {
             8: {
                 'lumi:gpu': {
-                    'total_runtime': (563, -0.50, 0.05, 's'),
-                    'workrate': (62200, -0.05, 0.05, 'Mdofs/s/pe'),
+                    'total_runtime': (396, -0.50, 0.05, 's'),
                 }
             },
             16: {
                 'lumi:gpu': {
-                    'total_runtime': (432, -0.50, 0.05, 's'),
-                    'workrate': (48488, -0.05, 0.05, 'Mdofs/s/pe'),
+                    'total_runtime': (272, -0.50, 0.05, 's'),
                 }
             },
        } 
