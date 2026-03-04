@@ -81,26 +81,6 @@ class lumi_cp2k_gpu_check(cp2k_check):
 
     executable = 'cp2k.psmp'
     executable_opts = ['H2O-256.inp']
-
-    # We have to use the script here becuase we have to make sure that every
-    #  rank has exactly one GPU. It would be nice to use the `--gpus-per-task`
-    #  flag but that does not seem to work.
-    @run_after('init')
-    def add_select_gpu_wrapper(self):
-        self.prerun_cmds += [
-            'cat << EOF > select_gpu',
-            '#!/bin/bash',
-            'export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID',
-            'exec \$*',
-            'EOF',
-            'chmod +x ./select_gpu'
-        ]
-        self.executable = './select_gpu ' + self.executable
-    
-    @run_before('run')
-    def set_cpu_binding_mask(self):
-        self.job.launcher.options = ["--cpu-bind=mask_cpu:7e000000000000,7e00000000000000,7e0000,7e000000,7e,7e00,7e00000000,7e0000000000"]
-
     prerun_cmds = ["ulimit -s unlimited"]
     env_vars = {
         "MPICH_OFI_NIC_POLICY": "GPU",
@@ -110,3 +90,12 @@ class lumi_cp2k_gpu_check(cp2k_check):
         "OMP_NUM_THREADS": "${SLURM_CPUS_PER_TASK}",
         "OMP_STACKSIZE": "512M",
     }
+
+    @run_before('run')
+    def set_gpu_binding(self):
+        self.job.launcher.options = [
+            '--cpus-per-task=7',
+            '--gpu-bind=map:4,5,2,3,6,7,0,1',
+            '--gres-flags=allow-task-sharing'
+        ]
+

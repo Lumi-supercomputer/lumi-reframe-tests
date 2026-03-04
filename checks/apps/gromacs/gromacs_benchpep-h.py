@@ -103,21 +103,12 @@ class lumi_gromacs_pep_h(rfm.RunOnlyRegressionTest):
         }
 
     @run_before('run')
-    def set_cpu_mask(self):
-        cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
-        self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
-
-    @run_after('init')
-    def add_select_gpu_wrapper(self):
-        self.prerun_cmds += [
-            'cat << EOF > select_gpu',
-            '#!/bin/bash',
-            'export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID',
-            'exec \$*',
-            'EOF',
-            'chmod +x ./select_gpu'
+    def set_gpu_binding(self):
+        self.job.launcher.options = [
+            '--cpus-per-task=7',
+            '--gpu-bind=map:4,5,2,3,6,7,0,1',
+            '--gres-flags=allow-task-sharing'
         ]
-        self.executable = './select_gpu ' + self.executable
 
     @performance_function('ns/day')
     def perf(self):
