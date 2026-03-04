@@ -21,14 +21,11 @@ class HipBandwidth(rfm.RegressionTest):
 
     @run_after('init')
     def add_select_gpu_wrapper(self):
-        if self.binding == 'closest':
-            wrapper = 'gpu-affinity-localid.sh'
-        elif self.binding == 'optimal':
+        if self.binding == 'optimal':
             wrapper = 'gpu-affinity.sh'
-        wrapper_path = os.path.join(self.current_system.resourcesdir, 'reframe_resources', 'gpu_wrappers', wrapper)
-        self.prerun_cmds += [f'ln -s {wrapper_path} ./select_gpu.sh']
+            wrapper_path = os.path.join(self.current_system.resourcesdir, 'reframe_resources', 'gpu_wrappers', wrapper)
+            self.prerun_cmds += [f'ln -s {wrapper_path} ./select_gpu.sh']
         
-
     @run_before('compile')
     def pre_compile(self):
         self.prebuild_cmds = ['cd HIP-Basic/bandwidth/']
@@ -36,10 +33,14 @@ class HipBandwidth(rfm.RegressionTest):
 
     @run_before('run')
     def set_exec(self):
-        self.executable = './select_gpu.sh ./HIP-Basic/bandwidth/hip_bandwidth'
+        self.executable = './HIP-Basic/bandwidth/hip_bandwidth'
+        if self.binding == 'optimal':
+            self.executable = './select_gpu.sh ' + self.executable
         if self.binding == 'closest':
-            cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
-            self.job.launcher.options += [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
+            self.job.launcher.options = [
+                '--gpu-bind=map:4,5,2,3,6,7,0,1',
+                '--gres-flags=allow-task-sharing'
+            ]
         self.executable_opts = ['-memory pinned -trials 100 -memcpy htod -start 1073741824 -end 1077936128']   
         self.job.launcher.options += ['--cpu-bind=verbose', '--cpus-per-task=7']
 

@@ -170,7 +170,6 @@ class Hybrid_GPUBind_Check(AffinityTaskBase):
     num_gpus = 8
     num_gpus_per_node = num_gpus 
     num_tasks = num_gpus
-    num_threads = num_tasks - 1
     valid_systems = ['lumi:gpu']
 
     @run_after('init')
@@ -179,10 +178,26 @@ class Hybrid_GPUBind_Check(AffinityTaskBase):
         self.executable_opts = ['-l']
 
     @run_before('run')
-    def set_cpu_gpu_bind(self):
-        cpu_bind_mask = '0xfe,0xfe00,0xfe0000,0xfe000000,0xfe00000000,0xfe0000000000,0xfe000000000000,0xfe00000000000000'
-        self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
-        self.job.launcher.options += ['--gpu-bind=map_gpu:0,1,2,3,4,5,6,7']
+    def set_cpus_per_task(self):
+        self.num_threads = self.num_tasks - 1
+        if self.multithread:
+           self.num_threads = 2*self.num_threads
+
+    #@run_before('run')
+    #def set_cpu_gpu_bind(self):
+    #    cpu_bind_mask = '0xfe,0xfe00,0xfe0000,0xfe000000,0xfe00000000,0xfe0000000000,0xfe000000000000,0xfe00000000000000'
+    #    self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
+    #    self.job.launcher.options += ['--gpu-bind=map_gpu:0,1,2,3,4,5,6,7']
+    #
+    # Starting from Slurm v24.05.8 (installed with Jan2026 maintenance) one can use gpu-binding alone
+    # with `--gres-flags=allow-task-sharing` for GPU IPC enabled
+    @run_before('run')
+    def set_gpu_binding(self):
+        self.job.launcher.options = [
+            f'--cpus-per-task={self.num_threads}',
+            '--gpu-bind=map:4,5,2,3,6,7,0,1',
+            '--gres-flags=allow-task-sharing'
+        ]
 
     @sanity_function
     def check_cpu_gpu_numa_bind(self):

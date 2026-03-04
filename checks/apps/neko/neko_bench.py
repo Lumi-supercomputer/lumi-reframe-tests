@@ -54,10 +54,6 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
     
     mesh_file = variable(str, value='')
 
-    # Set dofs to enable workrate perf var
-    dofs = variable(int, value=0)
-    first_workrate_timestep = variable(int, value=0)
-
     perf_relative = variable(float, value=0.0, loggable=True)
 
     @run_before('compile')
@@ -81,10 +77,6 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
         }
 
     @run_before('run')
-    def set_dofs(self):
-        self.dofs = 8**3 * self.size
-
-    @run_before('run')
     def add_executable(self):
         self.executable = os.path.join(self.makeneko.stagedir,
                                        'neko')
@@ -94,27 +86,17 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
         self.executable_opts.append(case_file)
 
     @run_before('run')
-    def add_select_gpu_wrapper(self):
-        self.prerun_cmds += [
-            'cat << EOF > select_gpu',
-            '#!/bin/bash',
-            'export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID',
-            'exec \$*',
-            'EOF',
-            'chmod +x ./select_gpu'
-        ]
-        self.executable = './select_gpu ' + self.executable
-
-
-    @run_before('run')
     def set_num_tasks(self):
         self.num_tasks_per_node = self.num_gpus_per_node
         self.num_tasks = self.num_nodes*self.num_tasks_per_node
 
     @run_before('run')
-    def set_cpu_binding(self):
-        cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
-        self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
+    def set_gpu_binding(self):
+        self.job.launcher.options = [
+            '--cpus-per-task=7',
+            '--gpu-bind=map:4,5,2,3,6,7,0,1',
+            '--gres-flags=allow-task-sharing'
+        ]
 
     @sanity_function
     def normal_end(self):
@@ -129,8 +111,6 @@ class NekoTGVBase(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class lumi_neko_bench(NekoTGVBase):
-    first_workrate_timestep = 1200
-
     allref = {
         32768: {
             1: {

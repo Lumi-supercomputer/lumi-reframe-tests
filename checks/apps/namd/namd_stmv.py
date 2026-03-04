@@ -64,28 +64,10 @@ class lumi_namd_stmv(rfm.RunOnlyRegressionTest):
             self.num_cpus_per_task = 56
             self.num_tasks = 1
         elif self.gpu_mode == 'offload':
-            #self.executable_opts = ['+ignoresharing', '+devices 0', '+p 6', 'stmv_gpuoff_npt.namd']
             self.executable_opts = ['+p6', '+devices 4,5,2,3,6,7,0,1', 'stmv_gpuoff_npt.namd']
             self.num_cpus_per_task = 7
             self.num_tasks_per_node = 8
             self.num_tasks = self.num_nodes*self.num_tasks_per_node
-
-    #@run_before('run')
-    #def set_cpu_mask(self):
-    #    cpu_bind_mask = '0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000'
-    #    self.job.launcher.options = [f'--cpu-bind=mask_cpu:{cpu_bind_mask}']
-
-    #@run_before('run')
-    #def add_select_gpu_wrapper(self):
-    #    self.prerun_cmds += [
-    #        'cat << EOF > select_gpu',
-    #        '#!/bin/bash',
-    #        'export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID',
-    #        'exec \$*',
-    #        'EOF',
-    #        'chmod +x ./select_gpu'
-    #    ]
-    #    self.executable = './select_gpu ' + self.executable
 
     @sanity_function
     def validate_energy(self):
