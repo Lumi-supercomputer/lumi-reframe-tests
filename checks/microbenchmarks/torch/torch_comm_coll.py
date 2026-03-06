@@ -52,10 +52,13 @@ class torch_comm_coll_test(deepspeed_comm):
     
     coll_type  = parameter(['all_reduce', 'all_gather'])
     run_mode   = parameter(['native', 'torchrun'])
+    lumi_path_prefix = '/appl/local/containers/easybuild-sif-images'
+    laif_path_prefix = '/appl/local/laifs/containers'
     cont_image = parameter([
-        'rocm-6.2.4-python-3.12-pytorch-v2.6.0-dockerhash-ef203c810cc9', #'rocm-6.2.4-python-3.12-pytorch-v2.6.0',
-        'rocm-6.2.4-python-3.12-pytorch-v2.7.0-dockerhash-2a550b31226f', #'rocm-6.2.4-python-3.12-pytorch-v2.7.0',
-        'rocm-6.2.4-python-3.12-pytorch-v2.7.1-dockerhash-0d479e852886', #'rocm-6.2.4-python-3.12-pytorch-v2.7.1',
+        #f'{lumi_path_prefix}/lumi-pytorch-rocm-6.2.4-python-3.12-pytorch-v2.6.0-dockerhash-ef203c810cc9', #'rocm-6.2.4-python-3.12-pytorch-v2.6.0',
+        #f'{lumi_path_prefix}/lumi-pytorch-rocm-6.2.4-python-3.12-pytorch-v2.7.0-dockerhash-2a550b31226f', #'rocm-6.2.4-python-3.12-pytorch-v2.7.0',
+        f'{lumi_path_prefix}/lumi-pytorch-rocm-6.2.4-python-3.12-pytorch-v2.7.1-dockerhash-0d479e852886', #'rocm-6.2.4-python-3.12-pytorch-v2.7.1',
+        f'{laif_path_prefix}/lumi-multitorch-u24r64f21m43t29-20260225_144743/lumi-multitorch-full-u24r64f21m43t29-20260225_144743',
     ])
 
     tags = {'python', 'performance'}
@@ -84,10 +87,7 @@ class torch_comm_coll_test(deepspeed_comm):
 
     @run_before('run')
     def set_container_variables(self):
-        self.container_platform.image = os.path.join(
-            '/appl/lumi/containers/easybuild-sif-images/',
-            f'lumi-pytorch-{self.cont_image}.sif',
-        )
+        self.container_platform.image = f'{self.cont_image}.sif'
         py_script = 'communication/' + self.coll_type + '.py --scan --dist="torch"'
         if self.run_mode == 'native':
             self.container_platform.command = 'bash python-distributed.sh -u ' + py_script
@@ -101,6 +101,7 @@ class torch_comm_coll_test(deepspeed_comm):
             'MASTER_PORT':'29500',
             f'WORLD_SIZE': self.num_tasks,
             'SINGULARITYENV_OMP_NUM_THREADS': '7',
+            'SINGULARITYENV_LD_LIBRARY_PATH': '/usr/lib:\$LD_LIBRARY_PATH',
         }
 
     @run_before('run')
