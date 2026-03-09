@@ -51,7 +51,7 @@ class torch_comm_coll_test(deepspeed_comm):
     container_platform = 'Singularity'
     
     coll_type  = parameter(['all_reduce', 'all_gather'])
-    run_mode   = parameter(['native', 'torchrun'])
+    run_mode   = parameter(['srun', 'torchrun'])
     lumi_path_prefix = '/appl/local/containers/easybuild-sif-images'
     laif_path_prefix = '/appl/local/laifs/containers'
     cont_image = parameter([
@@ -70,7 +70,7 @@ class torch_comm_coll_test(deepspeed_comm):
 
     @run_before('run')
     def set_cpu_and_task_binding(self):
-        if self.run_mode == 'native':
+        if self.run_mode == 'srun':
             self.num_tasks = 16
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = 8
@@ -88,18 +88,17 @@ class torch_comm_coll_test(deepspeed_comm):
     @run_before('run')
     def set_container_variables(self):
         self.container_platform.image = f'{self.cont_image}.sif'
-        py_script = 'communication/' + self.coll_type + '.py --scan --dist="torch"'
-        if self.run_mode == 'native':
-            self.container_platform.command = 'bash python-distributed.sh -u ' + py_script
+        if self.run_mode == 'srun':
+            self.container_platform.command = f'bash -c "export USE_ROCM_AITER_ROPE_BACKEND=0; export RANK=\$SLURM_PROCID; export LOCAL_RANK=\$SLURM_LOCALID; python communication/{self.coll_type}.py --scan --dist=torch"'
         if self.run_mode == 'torchrun':
-            self.container_platform.command = 'bash torch-distributed.sh ' + py_script
+            self.container_platform.command = f'bash -c "export USE_ROCM_AITER_ROPE_BACKEND=0; python -m torch.distributed.run --nproc_per_node 8 --nnodes \$SLURM_NNODES --node_rank \$SLURM_PROCID --master_addr $MASTER_ADDR --master_port $MASTER_PORT communication/{self.coll_type}.py --scan --dist=torch"'
         self.env_vars = {
             'NCCL_DEBUG': 'WARN',
             'NCCL_NET_GDR_LEVEL':'PHB',
             'NCCL_SOCKET_IFNAME':'hsn0,hsn1,hsn2,hsn3',
             'MASTER_ADDR': '$(scontrol show hostnames ${SLURM_JOB_NODELIST} | head -n 1)',
             'MASTER_PORT':'29500',
-            f'WORLD_SIZE': self.num_tasks,
+            'WORLD_SIZE': self.num_tasks,
             'SINGULARITYENV_OMP_NUM_THREADS': '7',
             'SINGULARITYENV_LD_LIBRARY_PATH': '/usr/lib:\$LD_LIBRARY_PATH',
         }
