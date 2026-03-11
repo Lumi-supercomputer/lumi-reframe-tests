@@ -74,7 +74,7 @@ class torch_comm_coll_test(deepspeed_comm):
             self.num_tasks = 16
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = 8
-            self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
+            self.job.launcher.options = ['--mpi=pmi2', '--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
         if self.run_mode == 'torchrun':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
