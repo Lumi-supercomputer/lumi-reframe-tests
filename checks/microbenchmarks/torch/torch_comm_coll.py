@@ -51,11 +51,14 @@ class torch_comm_coll_test(deepspeed_comm):
     container_platform = 'Singularity'
     
     coll_type  = parameter(['all_reduce', 'all_gather'])
-    run_mode   = parameter(['native', 'torchrun'])
+    run_mode   = parameter(['srun', 'torchrun'])
+    lumi_path_prefix = '/appl/local/containers/easybuild-sif-images'
+    laif_path_prefix = '/appl/local/laifs/containers'
     cont_image = parameter([
-        'rocm-6.2.4-python-3.12-pytorch-v2.6.0-dockerhash-ef203c810cc9', #'rocm-6.2.4-python-3.12-pytorch-v2.6.0',
-        'rocm-6.2.4-python-3.12-pytorch-v2.7.0-dockerhash-2a550b31226f', #'rocm-6.2.4-python-3.12-pytorch-v2.7.0',
-        'rocm-6.2.4-python-3.12-pytorch-v2.7.1-dockerhash-0d479e852886', #'rocm-6.2.4-python-3.12-pytorch-v2.7.1',
+        #f'{lumi_path_prefix}/lumi-pytorch-rocm-6.2.4-python-3.12-pytorch-v2.6.0-dockerhash-ef203c810cc9', #'rocm-6.2.4-python-3.12-pytorch-v2.6.0',
+        #f'{lumi_path_prefix}/lumi-pytorch-rocm-6.2.4-python-3.12-pytorch-v2.7.0-dockerhash-2a550b31226f', #'rocm-6.2.4-python-3.12-pytorch-v2.7.0',
+        f'{lumi_path_prefix}/lumi-pytorch-rocm-6.2.4-python-3.12-pytorch-v2.7.1-dockerhash-0d479e852886', #'rocm-6.2.4-python-3.12-pytorch-v2.7.1',
+        f'{laif_path_prefix}/lumi-multitorch-u24r64f21m43t29-20260225_144743/lumi-multitorch-full-u24r64f21m43t29-20260225_144743',
     ])
 
     tags = {'python', 'performance'}
@@ -67,11 +70,11 @@ class torch_comm_coll_test(deepspeed_comm):
 
     @run_before('run')
     def set_cpu_and_task_binding(self):
-        if self.run_mode == 'native':
+        if self.run_mode == 'srun':
             self.num_tasks = 16
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = 8
-            self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
+            self.job.launcher.options = ['--mpi=pmi2', '--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
         if self.run_mode == 'torchrun':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
@@ -84,23 +87,20 @@ class torch_comm_coll_test(deepspeed_comm):
 
     @run_before('run')
     def set_container_variables(self):
-        self.container_platform.image = os.path.join(
-            '/appl/lumi/containers/easybuild-sif-images/',
-            f'lumi-pytorch-{self.cont_image}.sif',
-        )
-        py_script = 'communication/' + self.coll_type + '.py --scan --dist="torch"'
-        if self.run_mode == 'native':
-            self.container_platform.command = 'bash python-distributed.sh -u ' + py_script
+        self.container_platform.image = f'{self.cont_image}.sif'
+        if self.run_mode == 'srun':
+            self.container_platform.command = f'bash -c "export USE_ROCM_AITER_ROPE_BACKEND=0; export RANK=\$SLURM_PROCID; export LOCAL_RANK=\$SLURM_LOCALID; python communication/{self.coll_type}.py --scan --dist=torch"'
         if self.run_mode == 'torchrun':
-            self.container_platform.command = 'bash torch-distributed.sh ' + py_script
+            self.container_platform.command = f'bash -c "export USE_ROCM_AITER_ROPE_BACKEND=0; python -m torch.distributed.run --nproc_per_node 8 --nnodes \$SLURM_NNODES --node_rank \$SLURM_PROCID --master_addr $MASTER_ADDR --master_port $MASTER_PORT communication/{self.coll_type}.py --scan --dist=torch"'
         self.env_vars = {
             'NCCL_DEBUG': 'WARN',
             'NCCL_NET_GDR_LEVEL':'PHB',
             'NCCL_SOCKET_IFNAME':'hsn0,hsn1,hsn2,hsn3',
             'MASTER_ADDR': '$(scontrol show hostnames ${SLURM_JOB_NODELIST} | head -n 1)',
             'MASTER_PORT':'29500',
-            f'WORLD_SIZE': self.num_tasks,
+            'WORLD_SIZE': self.num_tasks,
             'SINGULARITYENV_OMP_NUM_THREADS': '7',
+            'SINGULARITYENV_LD_LIBRARY_PATH': '/usr/lib:\$LD_LIBRARY_PATH',
         }
 
     @run_before('run')

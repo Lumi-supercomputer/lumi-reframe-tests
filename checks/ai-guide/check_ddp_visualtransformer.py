@@ -8,58 +8,69 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
     valid_systems       = ['lumi:gpu']
     valid_prog_environs = ['builtin']
     container_platform  = 'Singularity'
-    num_tasks_per_node  = 8
     num_gpus_per_node   = 8
-    num_cpus_per_task   = 7
     exclusive_access    = True
+    #lumi_path_prefix = '/appl/local/containers/easybuild-sif-images'
+    laif_path_prefix = '/appl/local/laifs/containers'
     cont_image          = parameter([
-        'rocm-6.2.1-python-3.12-pytorch-20240918-vllm-4075b35',
+        #f'{lumi_path_prefix}/lumi-pytorch-rocm-6.2.1-python-3.12-pytorch-20240918-vllm-4075b35-dockerhash-3cad1babc4b8',
+        f'{laif_path_prefix}/lumi-multitorch-u24r64f21m43t29-20260225_144743/lumi-multitorch-full-u24r64f21m43t29-20260225_144743',
     ])
-    node_config = parameter(['1node', '2node'])
+
+    num_nodes = parameter([1, 2])
 
     perf_relative = variable(float, value=0.0, loggable=True)
 
     @run_before('run')
     def set_launch_settings(self):
         self.env_vars = {
-            'TORCH_HOME':'/scratch/project_462000008/.cache',
-            'HF_HOME':'/scratch/project_462000008/.cache',
             'NCCL_NET_GDR_LEVEL':'PHB',
             'NCCL_SOCKET_IFNAME':'hsn0,hsn1,hsn2,hsn3',
-            'SINGULARITY_BIND'  :'/appl/local/training/LUMI-AI-Guide/visualtransformer-env.sqsh:/user-software:image-src=/,/var/spool/slurmd,/opt/cray,/usr/lib64/libcxi.so.1,/usr/lib64/libjansson.so.4,/pfs,/scratch,/projappl,/project,/flash,/appl,/appl/local/training/LUMI-AI-Guide/deepspeed_adam:/user-software/lib/python3.12/site-packages/deepspeed/ops/csrc/adam,/appl/local/training/LUMI-AI-Guide/deepspeed_includes:/user-software/lib/python3.12/site-packages/deepspeed/ops/csrc/includes',
             'SINGULARITYENV_PREPEND_PATH':'/user-software/bin',
-            'MASTER_PORT'       :'29500',
-            'LOCAL_WORLD_SIZE'  :'8',
+            'SINGULARITYENV_LD_LIBRARY_PATH': '/usr/lib:\$LD_LIBRARY_PATH',
+            'MASTER_ADDR': '$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)',
+            'MASTER_PORT': '1${SLURM_JOB_ID:0-4}',
         }
-        self.job.launcher.options = ['--cpu-bind=v,mask_cpu="0x00fe000000000000,0xfe00000000000000,0x0000000000fe0000,0x00000000fe000000,0x00000000000000fe,0x000000000000fe00,0x000000fe00000000,0x0000fe0000000000"']
-
-    @run_before('run')
-    def configure_nodes(self):
-        if self.node_config == '1node':
-            self.num_tasks = 8
-        elif self.node_config == '2node':
-            self.num_tasks = 16
-
-        self.env_vars['WORLD_SIZE'] = str(self.num_tasks)
-        self.env_vars['MASTER_ADDR'] = '$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)'
+        self.job.launcher.options = ['--mpi=pmi2']
 
 @rfm.simple_test
 class test_visualtransformer(singularity_container_image):
-    launcher = parameter(['pytorch', 'deepspeed'])
+    launcher = parameter(['torchrun', 'deepspeed'])
 
     refs = {
-        ('pytorch', '1node'): (380.0, None, 0.1, 's'),
-        ('pytorch', '2node'): (220.0, None, 0.1, 's'),
-        ('deepspeed', '1node'): (380.0, None, 0.1, 's'),
-        ('deepspeed', '2node'): (220.0, None, 0.1, 's'),
+        ('torchrun', '1'): (380.0, None, 0.1, 's'),
+        ('torchrun', '2'): (220.0, None, 0.1, 's'),
+        ('deepspeed', '1'): (380.0, None, 0.1, 's'),
+        ('deepspeed', '2'): (220.0, None, 0.1, 's'),
     }
 
+    @run_before('run')
+    def configure_nodes(self):
+        if self.launcher == 'torchrun':
+            self.num_tasks = self.num_nodes
+            self.num_tasks_per_node  = 1 
+            self.num_cpus_per_task = 56
+        else:
+            self.num_tasks = self.num_nodes*self.num_gpus_per_node
+            self.num_tasks_per_node = self.num_gpus_per_node
+            self.num_cpus_per_task = 7
+            self.job.launcher.options = ['--mpi=pmi2', '--cpu-bind=v,mask_cpu="0x00fe000000000000,0xfe00000000000000,0x0000000000fe0000,0x00000000fe000000,0x00000000000000fe,0x000000000000fe00,0x000000fe00000000,0x0000fe0000000000"']
+
+    @run_before('run')
+    def set_environment(self):
+        self.env_vars['TORCH_HOME'] = '/scratch/project_462000008/.cache'
+        self.env_vars['HF_HOME'] = '/scratch/project_462000008/.cache'
+        self.env_vars['SINGULARITY_BIND'] = '/appl/local/training/LUMI-AI-Guide/ai-guide-env.sqsh:/user-software:image-src=/,/scratch,/projappl,/project,/flash,/appl,/pfs/lustrep1/scratch/project_462000008,/appl/local/,/pfs/lustrep3/appl/local,/pfs/lustrep2/scratch/project_462000265'
+        self.env_vars['OMP_NUM_THREADS'] = 7
+        if self.launcher == 'deepspeed':
+            self.env_vars['WORLD_SIZE'] = str(self.num_tasks)
+            self.env_vars['LOCAL_WORLD_SIZE'] = str(self.num_gpus_per_node)
 
     @run_before('performance')
     def set_reference(self):
         self.reference = {
             'lumi:gpu': {
-                'training_time': self.refs[(self.launcher, self.node_config)]
+                'training_time': self.refs[(self.launcher, str(self.num_nodes))]
             }
         }
 
@@ -88,39 +99,39 @@ class test_visualtransformer(singularity_container_image):
 
     @run_before('run')
     def run_training(self):
-        self.container_platform.image = os.path.join(
-            '/appl/local/containers/sif-images/',
-            f'lumi-pytorch-{self.cont_image}.sif',
-        )
+        self.container_platform.image = f'{self.cont_image}.sif'
 
-        base = (
-            'bash -c "export RANK=\$SLURM_PROCID; export LOCAL_RANK=\$SLURM_LOCALID;'
-        )
-
-        if self.launcher == 'pytorch':
-            cmd = 'python ddp_visualtransformer.py'
+        if self.launcher == 'torchrun':
+            cmd = 'bash -c "python -m torch.distributed.run --nnodes=\$SLURM_JOB_NUM_NODES --nproc_per_node=8 --rdzv_id=\$SLURM_JOB_ID --rdzv_backend=c10d --rdzv_endpoint="$MASTER_ADDR:$MASTER_PORT" ddp_visiontransformer.py"'
         elif self.launcher == 'deepspeed':
-            cmd = 'export CXX=g++-12; python ds_visualtransformer.py --deepspeed --deepspeed_config ds_config.json'
+            cmd = 'bash -c "export RANK=\$SLURM_PROCID; export LOCAL_RANK=\$SLURM_LOCALID; python ds_visiontransformer.py --deepspeed --deepspeed_config ds_config.json"'
 
-        self.container_platform.command = f'{base}{cmd}"'
+        self.container_platform.command = cmd
 
 @rfm.simple_test
 class test_container_rccl(singularity_container_image):
     refs = {
-        '1node': {
+        '1': {
             'busbw': (125, -0.05, None, 'GB/s'),
             'algbw': (70, -0.05, None, 'GB/s'),
         },
-        '2node': {
+        '2': {
             'busbw': (85, -0.05, None, 'GB/s'),
             'algbw': (45, -0.05, None, 'GB/s'),
         },
     }
 
+    @run_before('run')
+    def configure_nodes(self):
+        self.num_tasks_per_node  = 8
+        self.num_tasks = self.num_nodes*self.num_tasks_per_node
+        self.num_cpus_per_task  = 7
+        self.job.launcher.options = ['--mpi=pmi2', '--cpu-bind="mask_cpu:0xfe000000000000,0xfe00000000000000,0xfe0000,0xfe000000,0xfe,0xfe00,0xfe00000000,0xfe0000000000"']
+
     @run_before('performance')
     def set_reference(self):
         self.reference = {
-            'lumi:gpu': self.refs[self.node_config]
+            'lumi:gpu': self.refs[str(self.num_nodes)]
         }
 
     @sanity_function
@@ -155,8 +166,5 @@ class test_container_rccl(singularity_container_image):
 
     @run_before('run')
     def set_container_variables(self):
-        self.container_platform.image = os.path.join(
-                '/appl/local/containers/sif-images/',
-                f'lumi-pytorch-{self.cont_image}.sif',
-                )
-        self.container_platform.command = "bash -c '/opt/rccltests/all_reduce_perf -z 1 -b 2M -e 2048M -f 2 -g 1 -t 1 -R 1 -n 80 -w 5 -d half'"
+        self.container_platform.image = f'{self.cont_image}.sif'
+        self.container_platform.command = "bash -c '/usr/libexec/rccl-tests/all_reduce_perf -z 1 -b 2M -e 2048M -f 2 -g 1 -t 1 -R 1 -n 80 -w 5 -d half'"
