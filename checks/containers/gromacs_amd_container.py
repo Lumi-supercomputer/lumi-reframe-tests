@@ -85,11 +85,11 @@ class lumi_gromacs_infinityhub_container(gromacs_check):
             self.executable_opts += ['-ntmpi', f'{self.num_gpus_per_node}',]
             self.executable_opts += ['-gpu_id', '4,5,2,3,6,7,0,1']
 
-    @run_before('run')
-    def set_cpu_binding(self):
-        if self.nb_impl == 'gpu':
-            self.job.options = [f'--cpus-per-gpu={self.num_cpus_per_gpu}']
-            self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfefefefefefefefe"']
+    # @run_before('run')
+    # def set_cpu_binding(self):
+    #     if self.nb_impl == 'gpu':
+    #         self.job.options = [f'--cpus-per-gpu={self.num_cpus_per_gpu}']
+    #         self.job.launcher.options = ['--cpu-bind="mask_cpu:0xfefefefefefefefe"']
 
     @run_before('run')
     def overwrite_prerun(self):
