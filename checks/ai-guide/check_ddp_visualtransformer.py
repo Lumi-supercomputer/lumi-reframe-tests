@@ -14,7 +14,7 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
     laif_path_prefix = '/appl/local/laifs/containers'
     cont_image          = parameter([
         #f'{lumi_path_prefix}/lumi-pytorch-rocm-6.2.1-python-3.12-pytorch-20240918-vllm-4075b35-dockerhash-3cad1babc4b8',
-        f'{laif_path_prefix}/lumi-multitorch-u24r64f21m43t29-20260225_144743/lumi-multitorch-full-u24r64f21m43t29-20260225_144743',
+        f'{laif_path_prefix}/lumi-multitorch-u24r70f21m50t210-20260513_121430/lumi-multitorch-full-u24r70f21m50t210-20260513_121430' # ROCm 7 based image
     ])
 
     num_nodes = parameter([1, 2])
