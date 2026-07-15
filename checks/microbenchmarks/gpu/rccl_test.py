@@ -15,7 +15,7 @@ class rccl_test_allreduce(rfm.RegressionTest):
     num_tasks = 16
     num_tasks_per_node = 8
     num_gpus_per_node = 8
-    executable_opts = ['-b 2M', '-e 2048M', '-f 2', '-g 1', '-z 1', '-t 1', '-R 1', '-n 80', '-w 5', '-d half']
+    executable_opts = ['-b 2M', '-e 2048M', '-f 2', '-g 1', '-z 1', '-t 1', '-R 1', '-n 80', '-w 5', '-d float']
     executable = 'build/all_reduce_perf'
     exclusive_access = True
 
@@ -42,7 +42,8 @@ class rccl_test_allreduce(rfm.RegressionTest):
             'NCCL_DEBUG': 'INFO',
             'NCCL_SOCKET_IFNAME': 'hsn0,hsn1,hsn2,hsn3',
             'NCCL_NET_GDR_LEVEL': '3',
-            'NCCL_ENABLE_DMABUF_SUPPORT': '1',
+            'FI_CXI_DISABLE_HOST_REGISTER': '1',
+            'FI_MR_CACHE_MONITOR': 'userfaultfd',
         }
     
     @run_before('run')
