@@ -10,10 +10,8 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
     container_platform  = 'Singularity'
     num_gpus_per_node   = 8
     exclusive_access    = True
-    #lumi_path_prefix = '/appl/local/containers/easybuild-sif-images'
     laif_path_prefix = '/appl/local/laifs/containers'
     cont_image          = parameter([
-        #f'{lumi_path_prefix}/lumi-pytorch-rocm-6.2.1-python-3.12-pytorch-20240918-vllm-4075b35-dockerhash-3cad1babc4b8',
         f'{laif_path_prefix}/lumi-multitorch-u24r70f21m50t210-20260513_121430/lumi-multitorch-full-u24r70f21m50t210-20260513_121430' # ROCm 7 based image
     ])
 
@@ -24,12 +22,12 @@ class singularity_container_image(rfm.RunOnlyRegressionTest):
     @run_before('run')
     def set_launch_settings(self):
         self.env_vars = {
-            'NCCL_NET_GDR_LEVEL':'PHB',
-            'NCCL_SOCKET_IFNAME':'hsn0,hsn1,hsn2,hsn3',
-            'SINGULARITYENV_PREPEND_PATH':'/user-software/bin',
-            'SINGULARITYENV_LD_LIBRARY_PATH': '/usr/lib:\$LD_LIBRARY_PATH',
+            'SINGULARITYENV_NCCL_NET_GDR_LEVEL':'PHB',
+            'SINGULARITYENV_NCCL_SOCKET_IFNAME':'hsn0,hsn1,hsn2,hsn3',
             'MASTER_ADDR': '$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)',
             'MASTER_PORT': '1${SLURM_JOB_ID:0-4}',
+            'SINGULARITYENV_FI_CXI_DISABLE_HOST_REGISTER': '1',
+            'SINGULARITYENV_FI_MR_CACHE_MONITOR': 'userfaultfd',
         }
         self.job.launcher.options = ['--mpi=pmi2']
 
