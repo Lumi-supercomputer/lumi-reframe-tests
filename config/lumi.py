@@ -1,4 +1,5 @@
 project = 'project_462000008'
+ccpe_image = 'ccpe/26.03-noRocm-SP7-LUMI'
 
 site_configuration = {
     'systems': [
@@ -79,10 +80,15 @@ site_configuration = {
                         'cpeGNU',
                         'ROCm',
                     ],
-                    'max_jobs': 200,
-                    'modules': ['partition/G'],
-                    'access': ['--partition=standard-g',
+                    'max_jobs': 4,
+                    'modules': ['LUMI', 'partition/G'],
+                    'access': ['--partition=dev-g',
                                f'--account={project}'],
+                    'prepare_cmds': ['if [ -z "${SWITCHTOCCPE}" ]', 
+                               'then', 
+                               f'   module load CrayEnv {ccpe_image} || exit', 
+                               'fi',
+                               'eval $SWITCHTOCCPE'],
                     'resources': [
                         {
                             'name': 'memory',

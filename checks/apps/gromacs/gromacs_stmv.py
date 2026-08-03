@@ -21,12 +21,12 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['cpeAMD']
 
-    release_environ = parameter(['production', 'leading']) 
+    release_environ = parameter(['production', 'testing', 'hip_branch']) 
 
     maintainers = ['mszpindler']
     use_multithreading = False
     exclusive_access = True
-    num_nodes = parameter([1], loggable=True)
+    num_nodes = parameter([1,2], loggable=True)
     num_gpus_per_node = 8
     time_limit = '10m'
     nb_impl = parameter(['gpu'])
@@ -38,6 +38,8 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     keep_files = ['md.log']
 
     perf_relative = variable(float, value=0.0, loggable=True)
+
+    container_platform = 'Singularity'
 
     allref = {
         1: {
@@ -56,9 +58,13 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
             case 'production':
                 self.modules = ['GROMACS/2025.4-cpeAMD-25.03-HeFFTe-rocm', 'rocm/6.3.4', 'AdaptiveCpp/25.10']
                 self.tags = {'benchmark', 'production', 'contrib', 'gpu', 'performance'}
-            case 'leading':
-                self.modules = ['GROMACS/2026.0-cpeAMD-25.03-HeFFTe-rocm-hip', 'rocm/6.3.4','AdaptiveCpp/25.02']
+            case 'testing':
+                #self.modules = ['GROMACS/2026.3-cpeAMD-26.03-HeFFTe-rocm-sycl', 'rocm/7.0.3','AdaptiveCpp/25.10.0']
+                self.modules = ['GROMACS', 'rocm/7.0.3','AdaptiveCpp/25.10.0']
                 self.tags = {'benchmark', 'testing', 'contrib', 'gpu'}
+            case 'hip_branch':
+                self.modules = ['GROMACS', 'rocm/7.0.3']
+                self.tags = {'benchmark', 'testing', 'contrib', 'gpu', 'performance'}
 
     @run_after('init')
     def prepare_test(self):
@@ -76,7 +82,7 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
     def setup_runtime(self):
         self.num_tasks_per_node = 8
         self.num_tasks = self.num_tasks_per_node*self.num_nodes
-        npme_ranks = 1
+        npme_ranks = self.num_nodes
 
         self.executable_opts += [
             '-nsteps -1',
@@ -104,12 +110,21 @@ class lumi_gromacs_stmv(rfm.RunOnlyRegressionTest):
         }
 
     @run_before('run')
+    def ccpe_adapt_srun(self):
+        self.job.launcher.modifier = 'SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH'
+
+    @run_before('run')
     def set_gpu_binding(self):
         self.job.launcher.options = [
             '--cpus-per-task=7',
             '--gpu-bind=map:4,5,2,3,6,7,0,1',
             '--gres-flags=allow-task-sharing'
         ]
+
+    @run_before('run')
+    def ccpe_image(self):
+        self.container_platform.image = '$SIFCCPE'
+        self.container_platform.command = self.executable + ' ' + ' '.join(self.executable_opts)
 
     @performance_function('ns/day')
     def perf(self):
