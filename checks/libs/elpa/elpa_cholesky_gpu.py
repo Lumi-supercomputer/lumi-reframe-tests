@@ -11,10 +11,12 @@ class ELPA_Cholesky_GPU(rfm.RegressionTest):
     # This is stripped version of https://gitlab.mpcdf.mpg.de/elpa/elpa/-/blob/master/test/Fortran/test.F90
     # manually processed for cholesky solver only
     sourcepath = 'elpa_fortran_validate_real_double_cholesky_1stage_gpu_random.F90'
-    executable = 'elpa_test'
+    executable = './elpa_test'
     maintainers = ['mszpindler']
     num_gpus_per_node = 1
     tasks = 1
+
+    container_platform = 'Singularity'
 
     perf_relative = variable(float, value=0.0, loggable=True)
 
@@ -34,6 +36,15 @@ class ELPA_Cholesky_GPU(rfm.RegressionTest):
     @run_before('run')
     def set_env(self):
         self.env_vars = {'ELPA_DEFAULT_real_kernel': 'ELPA_2STAGE_REAL_AMD_GPU'}
+
+    @run_before('run')
+    def ccpe_adapt_srun(self):
+        self.job.launcher.modifier = 'SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH'
+
+    @run_before('run')
+    def ccpe_image(self):
+        self.container_platform.image = '$SIFCCPE'
+        self.container_platform.command = self.executable + ' ' + ' '.join(self.executable_opts)
 
     @sanity_function
     def validate_solution(self):
