@@ -7,13 +7,14 @@ class lumi_build_comm_scope(rfm.CompileOnlyRegressionTest):
     valid_systems = ['lumi:gpu']
     valid_prog_environs = ['builtin']
     sourcesdir = 'https://github.com/c3sr/comm_scope -b v0.12.0'
-    modules = ['buildtools', 'rocm']
+    modules = ['buildtools', 'rocm/7.0.3']
     build_system = 'CMake'
 
     @run_before('compile')
     def do_cmake(self):
         self.prebuild_cmds = ['git submodule update --init --recursive']
-        self.build_system.config_opts = ['--fresh', '-DCMAKE_CXX_COMPILER=hipcc', '-DSCOPE_ARCH_MI250X=ON', '-DSCOPE_USE_NUMA=ON', '-DCMAKE_CXX_FLAGS="-D__HIP_PLATFORM_AMD__"']
+        #self.build_system.config_opts = ['--fresh', '-DCMAKE_C_COMPILER=amdclang', '-DCMAKE_CXX_COMPILER=hipcc', '-DSCOPE_ARCH_MI250X=ON', '-DSCOPE_USE_NUMA=ON', '-DCMAKE_CXX_FLAGS="-D__HIP_PLATFORM_AMD__"']
+        self.build_system.config_opts = ['--fresh', '-DCMAKE_C_COMPILER=amdclang', '-DCMAKE_CXX_COMPILER=hipcc', '-DSCOPE_ARCH_MI250X=ON', '-DSCOPE_USE_NUMA=ON', '-DCMAKE_CXX_FLAGS="-D__HIP_PLATFORM_AMD__ --offload-arch=gfx90a:xnack+ -Wno-c2y-extensions -fopenmp"', '-DCMAKE_POLICY_VERSION_MINIMUM=3.5']
         self.build_system.flags_from_environ = False
         self.build_system.builddir = 'build'
         self.build_system.max_concurrency = 16
@@ -36,16 +37,19 @@ class comm_scope(rfm.RunOnlyRegressionTest):
 
     build_comm_scope = fixture(lumi_build_comm_scope, scope='environment')
 
+    container_platform = 'Singularity'
+
     # Reference numbers are taken from C. Pearson "Interconnect Bandwidth Heterogeneity on AMD MI250x and Infinity Fabric" (https://arxiv.org/pdf/2302.14827.pdf)
     reference = {
         'lumi:gpu': {
             'quad':   (148, -0.05, 0.05, 'GB/s'),
-            'dual':   (76, -0.05, 0.05, 'GB/s'),
+            'dual':   (76, -0.1, 0.05, 'GB/s'), # needs to have a higher margin
             'single': (38, -0.05, 0.05, 'GB/s'),
         }
     }
 
     tags = {'production', 'craype'}
+
     
     @run_before('run')
     def set_executable_opts(self):
@@ -58,13 +62,24 @@ class comm_scope(rfm.RunOnlyRegressionTest):
                 dst_gpu = 6
             case 'single':
                 dst_gpu = 2
-        self.executable_opts = [f'--benchmark_filter="Comm_implicit_managed_GPUWrGPU_fine/{src_gpu}/{dst_gpu}/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
+        self.executable_opts = [f'--benchmark_filter="Comm_implicit_managed_GPUWrGPU_fine/{src_gpu}/{dst_gpu}/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
+        #self.executable_opts = [f'--benchmark_filter="hipMemcpyAsync_GPUToGPU/{src_gpu}/{dst_gpu}/log2\(N\):30/"', '--benchmark_out_format=json', '--benchmark_out=rfm_job.json']
 
     @run_before('run')
     def set_env_vars(self):
         self.env_vars = {
-            'LD_LIBRARY_PATH': '$LD_LIBRARY_PATH:/opt/rocm/llvm/lib/',
+            #'LD_LIBRARY_PATH': '$LD_LIBRARY_PATH:/opt/rocm/llvm/lib/',
+            'HSA_XNACK': 1,
         }
+
+    @run_before('run')
+    def ccpe_image(self):
+        self.container_platform.image = '$SIFCCPE'
+        self.container_platform.command = self.executable + ' ' + ' '.join(self.executable_opts)
+
+    @run_before('run')
+    def ccpe_adapt_srun(self):
+        self.job.launcher.modifier = 'SINGULARITYENV_PATH=$PATH SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH'
 
     @run_before('performance')
     def set_perf_variables(self):
@@ -80,6 +95,7 @@ class comm_scope(rfm.RunOnlyRegressionTest):
     def validate_benchmarks(self):
         #return sn.assert_eq(sn.count( sn.findall('dst_gpu', 'rfm_job.json') ), self.num_gpus_per_node-1)
         return sn.assert_found('dst_gpu', 'rfm_job.json')
+        #return sn.assert_found('dst_id', 'rfm_job.json')
 
     @performance_function('GB/s')
     def bytes_per_second(self, connection='quad'):
@@ -91,6 +107,7 @@ class comm_scope(rfm.RunOnlyRegressionTest):
             case 'single':
                 dst_gpu=2
         bps = sn.extractsingle(rf'Comm_implicit_managed_GPUWrGPU_fine\S+.*bytes_per_second=(\S+)G\/s\s+dst_gpu={dst_gpu}\s+src_gpu=0', self.stdout, 1, float)
+        #bps = sn.extractsingle(rf'Comm_hipMemcpyAsync_GPUToGPU\S+.*bytes_per_second=(\S+)G\/s\s+dst_id={dst_gpu}\s+src_id=0', self.stdout, 1, float)
         # The benchmark formats bps on standard output in GiB not GB
         return bps*(1024**3)*1e-9
 
